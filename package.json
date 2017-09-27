@@ -1,0 +1,18 @@
+{
+  "name": "mongoexpressdemo",
+  "version": "0.1.0",
+  "description": "A place to store all my interview application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "matmath",
+  "license": "MIT",
+  "dependencies": {
+    "eslint": "^4.7.2"
+  },
+  "devDependencies": {
+    "eslint-config-airbnb-base": "^12.0.1",
+    "eslint-plugin-import": "^2.7.0"
+  }
+}
