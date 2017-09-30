@@ -12,8 +12,9 @@ MongoClient.connect(uri, (error, db) => {
   if (error) {
     log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
   } else {
-    app.listen(3000, () => {
-      log.info({ fnct: 'MongoClient' }, 'listening on 3000');
+    app.set('port', process.env.API_PORT || 3001);
+    const server = app.listen(app.get('port'), () => {
+      console.log(`Express server listening on port ${server.address().port}`);
     });
     db.close();
   }

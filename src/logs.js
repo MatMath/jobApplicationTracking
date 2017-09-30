@@ -6,7 +6,6 @@ const name = 'mongoExpress';
 
 // Rotate the logs daily and keep 7 days.
 const debugLogsLocation = path.join(__dirname, '../logs', 'debug.log');
-const infoLogsLocation = path.join(__dirname, '../logs', 'info.log');
 const warnLogsLocation = path.join(__dirname, '../logs', 'warn.log');
 if (!fs.existsSync(path.join(__dirname, '../logs'))) {
   console.log('DIRNAME:', __dirname);
@@ -23,10 +22,7 @@ module.exports.log = bunyan.createLogger({
     count: 10,
   }, {
     level: 'info',
-    type: 'rotating-file',
-    path: infoLogsLocation,
-    period: '1d',
-    count: 10,
+    stream: process.stdout,
   }, {
     level: 'warn',
     type: 'rotating-file',
