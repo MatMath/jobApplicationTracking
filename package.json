@@ -9,7 +9,9 @@
   "author": "matmath",
   "license": "MIT",
   "dependencies": {
-    "eslint": "^4.7.2"
+    "eslint": "^4.7.2",
+    "express": "^4.15.5",
+    "mongodb": "^2.2.31"
   },
   "devDependencies": {
     "eslint-config-airbnb-base": "^12.0.1",
