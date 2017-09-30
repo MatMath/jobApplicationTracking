@@ -1,12 +1,13 @@
-const { MongoClient } = require('mongodb');
-const config = require('../config.json');
+// Generic libs
+const express = require('express');
+const bodyParser = require('body-parser');
 
-const uri = config.mongourl;
-MongoClient.connect(uri, (err, db) => {
-  if (err) return console.log(err)
-   db = database
-   app.listen(3000, () => {
-     console.log('listening on 3000')
-   })
-  db.close();
-});
+// custom libs
+const { log } = require('./logs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+
+log.info({ fnct: 'App' }, 'Starting the App.js file');
+
+module.exports = app;
