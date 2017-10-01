@@ -4,7 +4,8 @@
   "description": "A place to store all my interview application",
   "main": "index.js",
   "scripts": {
-    "start": "node src/",
+    "start": "node bin/www",
+    "nodemon": "nodemon bin/www",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "matmath",
