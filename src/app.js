@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 // custom libs
 const { log, getBunyanLog } = require('./logs');
 const { dBconnect } = require('./database');
+const { globalStructure, meetingInfo, applicationType } = require('./objectStructure');
 
 let db;
 dBconnect().then((data) => {
@@ -15,13 +16,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 log.info({ fnct: 'App' }, 'Starting the App.js file');
 
-app.get('/info', (req, res) => res.json(getBunyanLog('info')));
-app.get('/all', (req, res) => res.json(getBunyanLog('all')));
-app.post('/quotes', (req, res) => {
-  db.collection('quotes').save(req.body, (err, result) => {
-    if (err) return log.warn({ fnct: 'Push Quote', error: err }, 'Error in the POST');
+app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));
+app.get('/log', (req, res) => res.json(getBunyanLog('info')));
+app.get('/basicparam', (req, res) => {
+  res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
+});
+app.post('/newapp', (req, res) => {
+  db.collection('jobapps').save(req.body, (err, result) => {
+    if (err) return log.warn({ fnct: 'Push New Application', error: err }, 'Error in the POST');
 
     log.info({ fnct: 'Push Quote', data: result }, 'saved to database');
+    return res.redirect('/');
+  });
+});
+app.post('/newcie', (req, res) => {
+  db.collection('company').save(req.body, (err, result) => {
+    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the POST');
+
+    log.info({ fnct: 'Push cie', data: result }, 'saved to database');
     return res.redirect('/');
   });
 });
