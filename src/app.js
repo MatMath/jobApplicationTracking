@@ -26,7 +26,6 @@ app.post('/quotes', (req, res) => {
   });
 });
 app.get('/view', (req, res) => {
-  console.log('DATABASE: ', db);
   db.collection('quotes').find().toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
