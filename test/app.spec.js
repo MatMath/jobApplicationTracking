@@ -9,6 +9,9 @@ let server;
 
 describe('Testing the flow', () => {
   before(() => {
+    process.env.DBJOBS = 'testjobs';
+    process.env.DBCIE = 'testcie';
+    app.initialize();
     server = app.listen(port, () => {
       console.log(`Express server listening on port ${server.address().port}`);
     });

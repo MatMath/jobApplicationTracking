@@ -7,6 +7,14 @@ const { log, getBunyanLog } = require('./logs');
 const { dBconnect } = require('./database');
 const { globalStructure, meetingInfo, applicationType } = require('./objectStructure');
 
+let jobapplication = 'jobapplication';
+let company = 'company';
+
+const initialize = () => {
+  jobapplication = (process.env.DBJOBS) ? process.env.DBJOBS : jobapplication; // Variable name for testing the DB.
+  company = (process.env.DBCIE) ? process.env.DBCIE : company; // Variable name for testing the DB.
+};
+
 let db;
 dBconnect().then((data) => {
   db = data;
@@ -22,15 +30,14 @@ app.get('/basicparam', (req, res) => {
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
 app.post('/newapp', (req, res) => {
-  db.collection('jobapps').save(req.body, (err, result) => {
+  db.collection(jobapplication).save(req.body, (err, result) => {
     if (err) return log.warn({ fnct: 'Push New Application', error: err }, 'Error in the POST');
-
     log.info({ fnct: 'Push Quote', data: result }, 'saved to database');
     return res.redirect('/');
   });
 });
 app.post('/newcie', (req, res) => {
-  db.collection('company').save(req.body, (err, result) => {
+  db.collection(company).save(req.body, (err, result) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the POST');
 
     log.info({ fnct: 'Push cie', data: result }, 'saved to database');
@@ -38,7 +45,7 @@ app.post('/newcie', (req, res) => {
   });
 });
 app.get('/view', (req, res) => {
-  db.collection('quotes').find().toArray((err, results) => {
+  db.collection(jobapplication).find().toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
@@ -46,6 +53,6 @@ app.get('/view', (req, res) => {
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/index.html`);
 });
-
+app.initialize = initialize;
 
 module.exports = app;
