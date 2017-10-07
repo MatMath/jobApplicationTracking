@@ -24,11 +24,20 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 log.info({ fnct: 'App' }, 'Starting the App.js file');
 
+// Get info
 app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));
 app.get('/log', (req, res) => res.json(getBunyanLog('info')));
 app.get('/basicparam', (req, res) => {
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
+app.get('/view', (req, res) => {
+  db.collection(jobapplication).find().toArray((err, results) => {
+    if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
+    return res.json(results);
+  });
+});
+
+// Add new info
 app.post('/newapp', (req, res) => {
   db.collection(jobapplication).save(req.body, (err, result) => {
     if (err) return log.warn({ fnct: 'Push New Application', error: err }, 'Error in the POST');
@@ -44,12 +53,11 @@ app.post('/newcie', (req, res) => {
     return res.redirect('/');
   });
 });
-app.get('/view', (req, res) => {
-  db.collection(jobapplication).find().toArray((err, results) => {
-    if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
-    return res.json(results);
-  });
-});
+
+// Update info
+
+// Delete Info
+
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/index.html`);
 });
