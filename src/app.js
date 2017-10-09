@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 // custom libs
 const { log, getBunyanLog } = require('./logs');
 const { dBconnect, handleDatabaseError } = require('./database');
+const { routeNotFound, genericErrorHandling } = require('./errorHandling');
 const {
   globalStructure,
   meetingInfo,
@@ -35,21 +36,12 @@ app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/index.html`);
 });
 
-app.use(handleDatabaseError);
-app.use((req, res, next) => {
-  const err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+// Catch if no route match.
+app.use(routeNotFound);
 
-app.use((err, req, res) => {
-  res.status(err.status || 500);
-  res.json({
-    message: err.message,
-    error: {},
-    title: 'error',
-  });
-});
+// Error handler section
+app.use(handleDatabaseError);
+app.use(genericErrorHandling);
 
 app.dBconnect = dBconnect;
 

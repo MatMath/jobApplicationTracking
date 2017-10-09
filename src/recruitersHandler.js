@@ -5,6 +5,7 @@ const express = require('express');
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
 const { dbName } = require('./objectStructure');
+const { customError } = require('./errorHandling');
 
 const router = express.Router();
 let db = getDbHandle();
@@ -27,6 +28,17 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   db.collection(recruiters).save(req.body, (err, result) => {
     if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
+    log.info({ fnct: 'Push recruiters', data: result }, 'saved to database');
+    return res.redirect('/');
+  });
+});
+router.put('/', (req, res, next) => {
+  const { id, data } = req.body;
+  if (!id || !data) {
+    next(customError('Missing Data', 400));
+  }
+  db.collection(recruiters).save(req.body.data, (err, result) => {
+    if (err) return log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
     log.info({ fnct: 'Push recruiters', data: result }, 'saved to database');
     return res.redirect('/');
   });

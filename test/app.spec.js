@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const request = require('request');
 const expect = require('expect.js');
 
@@ -28,7 +29,7 @@ describe('Testing the flow', () => {
   after(() => {
     server.close();
   });
-  describe('Recruiters flow', () => {
+  describe.only('Recruiters flow', () => {
     it('delete all testing RecruitersInfo to clean the DB', (done) => {
       // Delete info
       request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
@@ -55,6 +56,7 @@ describe('Testing the flow', () => {
           expect(error).to.be(null);
           expect(response.statusCode).to.be(200);
           const parsed = JSON.parse(body);
+          iDToDelete.recruiters = parsed[0]._id;
           expect(parsed.length).to.be(1);
           expect(parsed[0].name).to.be('Bob the Recruiters');
           done();
@@ -62,8 +64,14 @@ describe('Testing the flow', () => {
       });
     });
 
-    it('Update a Recruiters info from the System', () => {
-      expect(false).to.be(true);
+    it('Update a Recruiters info from the System', (done) => {
+      const replacement = { ...recruitersInfo, name: 'The trustworth' };
+      request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
+        console.log('error:', err, resp.message);
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(302);
+        done();
+      });
     });
 
     it('Delete a specific Recruiters', () => {
