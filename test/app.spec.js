@@ -27,23 +27,49 @@ describe('Testing the flow', () => {
   after(() => {
     server.close();
   });
-  it('delete all testing listing to clean the DB', () => {
-    // Get info,
+  it('delete all testing listing to clean the DB', (done) => {
     // Delete info
-    // Get info -> Empty array
-    expect(false).to.be(true);
+    request.post(`${url}/delete/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      expect(err).to.be(null);
+      expect(JSON.parse(info).n).to.not.be(undefined);
+      // Get info -> Empty array
+      request.get(`${url}/view`, (error, response, body) => {
+        expect(error).to.be(null);
+        expect(response.statusCode).to.be(200);
+        expect(JSON.parse(body).length).to.be(0);
+        done();
+      });
+    });
   });
 
-  it('delete all testing Cie to clean the DB', () => {
+  it('delete all testing Cie to clean the DB', (done) => {
     // Delete info
-    // Get info -> Empty array
-    expect(false).to.be(true);
+    request.post(`${url}/delete/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      expect(err).to.be(null);
+      expect(JSON.parse(info).n).to.not.be(undefined);
+      // Get info -> Empty array
+      request.get(`${url}/cie`, (error, response, body) => {
+        expect(error).to.be(null);
+        expect(response.statusCode).to.be(200);
+        expect(JSON.parse(body).length).to.be(0);
+        done();
+      });
+    });
   });
 
-  it('delete all testing RecruitersInfo to clean the DB', () => {
+  it.only('delete all testing RecruitersInfo to clean the DB', (done) => {
     // Delete info
-    // Get info -> Empty array
-    expect(false).to.be(true);
+    request.post(`${url}/delete/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      expect(err).to.be(null);
+      expect(JSON.parse(info).n).to.not.be(undefined);
+      // Get info -> Empty array
+      request.get(`${url}/recruiters`, (error, response, body) => {
+        expect(error).to.be(null);
+        expect(response.statusCode).to.be(200);
+        expect(JSON.parse(body).length).to.be(0);
+        done();
+      });
+    });
   });
 
   it('Get the basic param', (done) => {

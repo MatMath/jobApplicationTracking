@@ -44,7 +44,7 @@ app.get('/cie', (req, res) => {
     return res.json(results);
   });
 });
-app.get('/recruiterslist', (req, res) => {
+app.get('/recruiters', (req, res) => {
   db.collection(recruiters).find().toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
@@ -72,21 +72,21 @@ app.post('/newcie', (req, res) => {
 
 // Delete Info
 app.post('/delete/list', (req, res) => {
-  if (process.env.NODE_ENV !== test) { return res.redirect('/'); }
+  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(jobapplication).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
 app.post('/delete/cie', (req, res) => {
-  if (process.env.NODE_ENV !== test) { return res.redirect('/'); }
+  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(company).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
 app.post('/delete/recruiters', (req, res) => {
-  if (process.env.NODE_ENV !== test) { return res.redirect('/'); }
+  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(recruiters).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
     return res.json(data);
