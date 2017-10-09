@@ -31,11 +31,11 @@ describe('Testing the flow', () => {
   });
   it('delete all testing listing to clean the DB', (done) => {
     // Delete info
-    request.post(`${url}/delete/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
+    request.delete(`${url}/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
       expect(err).to.be(null);
       expect(JSON.parse(info).n).to.not.be(undefined);
       // Get info -> Empty array
-      request.get(`${url}/view`, (error, response, body) => {
+      request.get(`${url}/list`, (error, response, body) => {
         expect(error).to.be(null);
         expect(response.statusCode).to.be(200);
         expect(JSON.parse(body).length).to.be(0);
@@ -107,7 +107,7 @@ describe('Testing the flow', () => {
   });
 
   it('Add a new listing with missing info', (done) => {
-    request.post(`${url}/newapp`, { form: { info: 'not real info' } }, (err, resp) => {
+    request.post(`${url}/list`, { form: { info: 'not real info' } }, (err, resp) => {
       expect(err).to.be(null);
       expect(resp.statusCode).to.be(400);
       done();
@@ -116,10 +116,10 @@ describe('Testing the flow', () => {
 
   it('Add a new listing in the DB', (done) => {
     const newApplication = { ...globalStructure, location: 'over the rainbow' };
-    request.post(`${url}/newapp`, { form: newApplication }, (err, resp) => {
+    request.post(`${url}/list`, { form: newApplication }, (err, resp) => {
       expect(err).to.be(null);
       expect(resp.statusCode).to.be(302);
-      request.get(`${url}/view`, (error, response, body) => {
+      request.get(`${url}/list`, (error, response, body) => {
         expect(error).to.be(null);
         expect(response.statusCode).to.be(200);
         expect(JSON.parse(body).length).to.be(1);

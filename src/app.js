@@ -14,12 +14,12 @@ const {
 
 // Routing
 const cieHandler = require('./cieHandler');
+const listHandler = require('./listHandler');
 
-let { job, recruiters } = dbName;
+let { recruiters } = dbName;
 let db;
 
 const initialize = () => {
-  job = (process.env.DBJOBS) ? process.env.DBJOBS : job; // Variable name for testing the DB.
   recruiters = (process.env.DBRECRU) ? process.env.DBRECRU : recruiters; // Variable name for testing the DB.
   db = getDbHandle(); // Is Async on bootup, but We should not expect a call at server bootup.
 };
@@ -36,12 +36,7 @@ app.get('/basicparam', (req, res) => {
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
 app.use('/cie', cieHandler);
-app.get('/view', (req, res) => {
-  db.collection(job).find().toArray((err, results) => {
-    if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
-    return res.json(results);
-  });
-});
+app.use('/list', listHandler);
 
 app.get('/recruiters', (req, res) => {
   db.collection(recruiters).find().toArray((err, results) => {
@@ -51,24 +46,10 @@ app.get('/recruiters', (req, res) => {
 });
 
 // Add new info
-app.post('/newapp', (req, res) => {
-  db.collection(job).save(req.body, (err, result) => {
-    if (err) return log.warn({ fnct: 'Push New Application', error: err }, 'Error in the POST');
-    log.info({ fnct: 'Push Quote', data: result }, 'saved to database');
-    return res.redirect('/');
-  });
-});
 
 // Update info
 
 // Delete Info
-app.post('/delete/list', (req, res) => {
-  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
-  db.collection(job).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
-    return res.json(data);
-  });
-});
 app.post('/delete/recruiters', (req, res) => {
   if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(recruiters).remove(null, null, (err, data) => {
