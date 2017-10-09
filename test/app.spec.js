@@ -44,17 +44,15 @@ describe('Testing the flow', () => {
     });
   });
 
-  it.only('delete all testing Cie to clean the DB', (done) => {
+  it('delete all testing Cie to clean the DB', (done) => {
     // Delete info
-    request.post(`${url}/delete/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
+    request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
       expect(err).to.be(null);
-      console.log('INFO:', info);
       expect(JSON.parse(info).n).to.not.be(undefined);
       // Get info -> Empty array
       request.get(`${url}/cie`, (error, response, body) => {
         expect(error).to.be(null);
         expect(response.statusCode).to.be(200);
-        console.log('BODY:', body);
         expect(JSON.parse(body).length).to.be(0);
         done();
       });
@@ -89,7 +87,7 @@ describe('Testing the flow', () => {
   it('Add a new Cie in the System', (done) => {
     // Add Cie
     const newApplication = { ...globalStructure, location: 'over the rainbow' };
-    request.post(`${url}/newcie`, { form: newApplication }, (err, resp) => {
+    request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
       expect(err).to.be(null);
       expect(resp.statusCode).to.be(302);
       // Get Cie

@@ -15,12 +15,11 @@ const {
 // Routing
 const cieHandler = require('./cieHandler');
 
-let { job, cie, recruiters } = dbName;
+let { job, recruiters } = dbName;
 let db;
 
 const initialize = () => {
   job = (process.env.DBJOBS) ? process.env.DBJOBS : job; // Variable name for testing the DB.
-  cie = (process.env.DBCIE) ? process.env.DBCIE : cie; // Variable name for testing the DB.
   recruiters = (process.env.DBRECRU) ? process.env.DBRECRU : recruiters; // Variable name for testing the DB.
   db = getDbHandle(); // Is Async on bootup, but We should not expect a call at server bootup.
 };
@@ -59,14 +58,6 @@ app.post('/newapp', (req, res) => {
     return res.redirect('/');
   });
 });
-app.post('/newcie', (req, res) => {
-  db.collection(cie).save(req.body, (err, result) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the POST');
-
-    log.info({ fnct: 'Push cie', data: result }, 'saved to database');
-    return res.redirect('/');
-  });
-});
 
 // Update info
 
@@ -74,13 +65,6 @@ app.post('/newcie', (req, res) => {
 app.post('/delete/list', (req, res) => {
   if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(job).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
-    return res.json(data);
-  });
-});
-app.post('/delete/cie', (req, res) => {
-  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
-  db.collection(cie).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
