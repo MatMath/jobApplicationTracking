@@ -28,48 +28,133 @@ describe('Testing the flow', () => {
   after(() => {
     server.close();
   });
-  it('delete all testing listing to clean the DB', (done) => {
-    // Delete info
-    request.delete(`${url}/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
-      expect(err).to.be(null);
-      expect(JSON.parse(info).n).to.not.be(undefined);
-      // Get info -> Empty array
-      request.get(`${url}/list`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        expect(JSON.parse(body).length).to.be(0);
-        done();
+  describe('Recruiters flow', () => {
+    it('delete all testing RecruitersInfo to clean the DB', (done) => {
+      // Delete info
+      request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
+        expect(err).to.be(null);
+        expect(JSON.parse(info).n).to.not.be(undefined);
+        // Get info -> Empty array
+        request.get(`${url}/recruiters`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          expect(JSON.parse(body).length).to.be(0);
+          done();
+        });
       });
+    });
+
+    it('Add a new RecruitersInfo in the System', (done) => {
+      // Add Recru
+      const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
+      request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(302);
+        // Get Recru
+        request.get(`${url}/recruiters`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          const parsed = JSON.parse(body);
+          expect(parsed.length).to.be(1);
+          expect(parsed[0].name).to.be('Bob the Recruiters');
+          done();
+        });
+      });
+    });
+
+    it('Update a Recruiters info from the System', () => {
+      expect(false).to.be(true);
+    });
+
+    it('Delete a specific Recruiters', () => {
+      expect(false).to.be(true);
     });
   });
 
-  it('delete all testing Cie to clean the DB', (done) => {
-    // Delete info
-    request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
-      expect(err).to.be(null);
-      expect(JSON.parse(info).n).to.not.be(undefined);
-      // Get info -> Empty array
-      request.get(`${url}/cie`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        expect(JSON.parse(body).length).to.be(0);
-        done();
+  describe('Cie Flow', () => {
+    it('delete all testing Cie to clean the DB', (done) => {
+      // Delete info
+      request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
+        expect(err).to.be(null);
+        expect(JSON.parse(info).n).to.not.be(undefined);
+        // Get info -> Empty array
+        request.get(`${url}/cie`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          expect(JSON.parse(body).length).to.be(0);
+          done();
+        });
       });
+    });
+
+    it('Add a new Cie in the System', (done) => {
+      // Add Cie
+      const newApplication = { ...company, location: 'over the rainbow', name: 'AMC, Awesome Complex Cie' };
+      request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(302);
+        // Get Cie
+        request.get(`${url}/cie`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          const parsed = JSON.parse(body);
+          expect(parsed.length).to.be(1);
+          expect(parsed[0].name).to.be('AMC, Awesome Complex Cie');
+          done();
+        });
+      });
+    });
+    it('Update a Cie info from the System', () => {
+      expect(false).to.be(true);
+    });
+    it('Delete a specific Cie', () => {
+      expect(false).to.be(true);
     });
   });
 
-  it('delete all testing RecruitersInfo to clean the DB', (done) => {
-    // Delete info
-    request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
-      expect(err).to.be(null);
-      expect(JSON.parse(info).n).to.not.be(undefined);
-      // Get info -> Empty array
-      request.get(`${url}/recruiters`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        expect(JSON.parse(body).length).to.be(0);
+  describe('List Flow', () => {
+    it('delete all testing listing to clean the DB', (done) => {
+      // Delete info
+      request.delete(`${url}/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
+        expect(err).to.be(null);
+        expect(JSON.parse(info).n).to.not.be(undefined);
+        // Get info -> Empty array
+        request.get(`${url}/list`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          expect(JSON.parse(body).length).to.be(0);
+          done();
+        });
+      });
+    });
+
+    it('Add a new listing with missing info', (done) => {
+      request.post(`${url}/list`, { form: { info: 'not real info' } }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(400);
         done();
       });
+    });
+    it('Add a new listing in the DB', (done) => {
+      const newApplication = { ...globalStructure, location: 'over the rainbow' };
+      request.post(`${url}/list`, { form: newApplication }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(302);
+        request.get(`${url}/list`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          expect(JSON.parse(body).length).to.be(1);
+          done();
+        });
+      });
+    });
+
+    it('Update a old listing from the System', () => {
+      expect(false).to.be(true);
+    });
+
+    it('Delete a specific listing', () => {
+      expect(false).to.be(true);
     });
   });
 
@@ -81,83 +166,5 @@ describe('Testing the flow', () => {
       expect(applicationType).to.not.be(undefined);
       done();
     });
-  });
-
-  it('Add a new Cie in the System', (done) => {
-    // Add Cie
-    const newApplication = { ...globalStructure, location: 'over the rainbow' };
-    request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
-      expect(err).to.be(null);
-      expect(resp.statusCode).to.be(302);
-      // Get Cie
-      request.get(`${url}/cie`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        expect(JSON.parse(body).length).to.be(1);
-        done();
-      });
-    });
-  });
-
-  it('Add a new RecruitersInfo in the System', (done) => {
-    // Add Recru
-    const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
-    request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
-      expect(err).to.be(null);
-      expect(resp.statusCode).to.be(302);
-      // Get Recru
-      request.get(`${url}/recruiters`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        const parsed = JSON.parse(body);
-        expect(parsed.length).to.be(1);
-        expect(parsed[0].name).to.be('Bob the Recruiters');
-        done();
-      });
-    });
-  });
-
-  it('Add a new listing with missing info', (done) => {
-    request.post(`${url}/list`, { form: { info: 'not real info' } }, (err, resp) => {
-      expect(err).to.be(null);
-      expect(resp.statusCode).to.be(400);
-      done();
-    });
-  });
-
-  it('Add a new listing in the DB', (done) => {
-    const newApplication = { ...globalStructure, location: 'over the rainbow' };
-    request.post(`${url}/list`, { form: newApplication }, (err, resp) => {
-      expect(err).to.be(null);
-      expect(resp.statusCode).to.be(302);
-      request.get(`${url}/list`, (error, response, body) => {
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        expect(JSON.parse(body).length).to.be(1);
-        done();
-      });
-    });
-  });
-
-  it('Update a old listing from the System', () => {
-    expect(false).to.be(true);
-  });
-
-  it('Update a Recruiters info from the System', () => {
-    expect(false).to.be(true);
-  });
-
-  it('Update a Cie info from the System', () => {
-    expect(false).to.be(true);
-  });
-
-  it('Delete a specific listing', () => {
-    expect(false).to.be(true);
-  });
-  it('Delete a specific Recruiters', () => {
-    expect(false).to.be(true);
-  });
-  it('Delete a specific Cie', () => {
-    expect(false).to.be(true);
   });
 });
