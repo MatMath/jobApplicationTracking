@@ -34,7 +34,7 @@ router.post('/', (req, res) => {
 router.delete('/', (req, res) => {
   if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(cie).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
+    if (err) return log.warn({ fnct: 'Delete company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });

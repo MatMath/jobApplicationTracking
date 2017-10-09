@@ -4,7 +4,7 @@ const expect = require('expect.js');
 const port = 3456;
 const url = `http://localhost:${port}`;
 const app = require('../src/app');
-const { globalStructure, company } = require('../src/objectStructure');
+const { globalStructure, company, recruitersInfo } = require('../src/objectStructure');
 
 let server;
 const iDToDelete = {
@@ -99,10 +99,22 @@ describe('Testing the flow', () => {
     });
   });
 
-  it('Add a new RecruitersInfo in the System', () => {
-    // Add Cie
-    // Get Cie
-    expect(false).to.be(true);
+  it('Add a new RecruitersInfo in the System', (done) => {
+    // Add Recru
+    const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
+    request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
+      expect(err).to.be(null);
+      expect(resp.statusCode).to.be(302);
+      // Get Recru
+      request.get(`${url}/recruiters`, (error, response, body) => {
+        expect(error).to.be(null);
+        expect(response.statusCode).to.be(200);
+        const parsed = JSON.parse(body);
+        expect(parsed.length).to.be(1);
+        expect(parsed[0].name).to.be('Bob the Recruiters');
+        done();
+      });
+    });
   });
 
   it('Add a new listing with missing info', (done) => {

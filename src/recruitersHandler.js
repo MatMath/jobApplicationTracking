@@ -24,11 +24,17 @@ router.get('/', (req, res) => {
     return res.json(results);
   });
 });
-
+router.post('/', (req, res) => {
+  db.collection(recruiters).save(req.body, (err, result) => {
+    if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
+    log.info({ fnct: 'Push recruiters', data: result }, 'saved to database');
+    return res.redirect('/');
+  });
+});
 router.delete('/', (req, res) => {
   if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
   db.collection(recruiters).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
+    if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
