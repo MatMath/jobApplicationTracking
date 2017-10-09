@@ -1,5 +1,5 @@
 // Generic libs
-const { MongoClient } = require('mongodb');
+const { MongoClient, MongoError } = require('mongodb');
 
 // Custom fnct
 const config = require('../config.json');
@@ -19,7 +19,18 @@ const dBconnect = () => new Promise((resolve, reject) => {
   });
 });
 
+const handleDatabaseError = (error, req, res, next) => {
+  if (error instanceof MongoError) {
+    return res.status(503).json({
+      type: 'MongoError',
+      message: error.message,
+    });
+  }
+  return next(error);
+};
+
 module.exports = {
   dBconnect,
+  handleDatabaseError,
   getDbHandle: () => dbName,
 };
