@@ -6,6 +6,7 @@ const config = require('../config.json');
 const { log } = require('./logs');
 
 const uri = config.mongourl;
+let dbName;
 
 const dBconnect = () => new Promise((resolve, reject) => {
   MongoClient.connect(uri, (error, databaseHandle) => {
@@ -13,8 +14,12 @@ const dBconnect = () => new Promise((resolve, reject) => {
       log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
       reject(process.exit(1));
     }
+    dbName = databaseHandle;
     resolve(databaseHandle);
   });
 });
 
-module.exports.dBconnect = dBconnect;
+module.exports = {
+  dBconnect,
+  getDbHandle: () => dbName,
+};

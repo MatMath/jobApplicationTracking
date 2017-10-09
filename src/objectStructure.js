@@ -37,10 +37,17 @@ const globalStructure = {
   cover_letter: '',
 };
 
+const dbName = {
+  cie: 'company',
+  job: 'jobapplication',
+  recruiters: 'recruiters',
+};
+
 module.exports = {
   globalStructure,
   meetingInfo,
   applicationType,
   recruitersInfo,
   company,
+  dbName,
 };

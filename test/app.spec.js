@@ -4,7 +4,7 @@ const expect = require('expect.js');
 const port = 3456;
 const url = `http://localhost:${port}`;
 const app = require('../src/app');
-const { globalStructure } = require('../src/objectStructure');
+const { globalStructure, company } = require('../src/objectStructure');
 
 let server;
 const iDToDelete = {
@@ -18,10 +18,12 @@ describe('Testing the flow', () => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
-    app.initialize();
-    server = app.listen(port, () => {
-      console.log(`Express server listening on port ${server.address().port}`);
-      setTimeout(done, 1000); // change the DB opening by promess instead.
+    app.dBconnect().then(() => {
+      app.initialize();
+      server = app.listen(port, () => {
+        console.log(`Express server listening on port ${server.address().port}`);
+        done();
+      });
     });
   });
   after(() => {
@@ -42,22 +44,24 @@ describe('Testing the flow', () => {
     });
   });
 
-  it('delete all testing Cie to clean the DB', (done) => {
+  it.only('delete all testing Cie to clean the DB', (done) => {
     // Delete info
     request.post(`${url}/delete/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
       expect(err).to.be(null);
+      console.log('INFO:', info);
       expect(JSON.parse(info).n).to.not.be(undefined);
       // Get info -> Empty array
       request.get(`${url}/cie`, (error, response, body) => {
         expect(error).to.be(null);
         expect(response.statusCode).to.be(200);
+        console.log('BODY:', body);
         expect(JSON.parse(body).length).to.be(0);
         done();
       });
     });
   });
 
-  it.only('delete all testing RecruitersInfo to clean the DB', (done) => {
+  it('delete all testing RecruitersInfo to clean the DB', (done) => {
     // Delete info
     request.post(`${url}/delete/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
       expect(err).to.be(null);
@@ -82,10 +86,20 @@ describe('Testing the flow', () => {
     });
   });
 
-  it('Add a new Cie in the System', () => {
+  it('Add a new Cie in the System', (done) => {
     // Add Cie
-    // Get Cie
-    expect(false).to.be(true);
+    const newApplication = { ...globalStructure, location: 'over the rainbow' };
+    request.post(`${url}/newcie`, { form: newApplication }, (err, resp) => {
+      expect(err).to.be(null);
+      expect(resp.statusCode).to.be(302);
+      // Get Cie
+      request.get(`${url}/cie`, (error, response, body) => {
+        expect(error).to.be(null);
+        expect(response.statusCode).to.be(200);
+        expect(JSON.parse(body).length).to.be(1);
+        done();
+      });
+    });
   });
 
   it('Add a new RecruitersInfo in the System', () => {
