@@ -17,10 +17,11 @@ describe('Testing the flow', () => {
   before((done) => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
+    process.env.DBRECRU = 'testrecruiters';
     app.initialize();
     server = app.listen(port, () => {
       console.log(`Express server listening on port ${server.address().port}`);
-      setTimeout(done, 1000);
+      setTimeout(done, 1000); // change the DB opening by promess instead.
     });
   });
   after(() => {

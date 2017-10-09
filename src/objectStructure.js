@@ -41,4 +41,6 @@ module.exports = {
   globalStructure,
   meetingInfo,
   applicationType,
+  recruitersInfo,
+  company,
 };
