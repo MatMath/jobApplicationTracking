@@ -19,7 +19,6 @@ describe('Testing the flow', () => {
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
     app.dBconnect().then(() => {
-      app.initialize();
       server = app.listen(port, () => {
         console.log(`Express server listening on port ${server.address().port}`);
         done();
@@ -61,7 +60,7 @@ describe('Testing the flow', () => {
 
   it('delete all testing RecruitersInfo to clean the DB', (done) => {
     // Delete info
-    request.post(`${url}/delete/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
+    request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
       expect(err).to.be(null);
       expect(JSON.parse(info).n).to.not.be(undefined);
       // Get info -> Empty array
