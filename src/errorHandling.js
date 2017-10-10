@@ -7,22 +7,18 @@ const routeNotFound = (req, res, next) => {
 };
 
 const genericErrorHandling = (err, req, res, next) => {
+  if (err.isBoom) {
+    return res.status(err.output.statusCode).send({ ...err.output.payload, data: err.data });
+  }
   res.status(err.status || 500);
-  res.json({
+  return res.json({
     message: err.message,
     error: {},
     title: 'error',
   });
 };
 
-const customError = (msg, code) => {
-  const tmp = new Error(msg);
-  tmp.status = code;
-  return tmp;
-};
-
 module.exports = {
   routeNotFound,
   genericErrorHandling,
-  customError,
 };

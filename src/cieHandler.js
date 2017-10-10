@@ -5,7 +5,6 @@ const express = require('express');
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
 const { dbName } = require('./objectStructure');
-const { customError } = require('./errorHandling');
 
 const router = express.Router();
 let db = getDbHandle();

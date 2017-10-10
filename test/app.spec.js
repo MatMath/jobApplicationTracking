@@ -69,7 +69,7 @@ describe('Testing the flow', () => {
 
     it('Add a new RecruitersInfo in the System', (done) => {
       // Add Recru
-      const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
+      const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters', cie: 'water world' };
       request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
@@ -86,8 +86,26 @@ describe('Testing the flow', () => {
       });
     });
 
+    it('Add a new RecruitersInfo with missing info', (done) => {
+      // Add Recru
+      const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
+      request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(400);
+        done();
+      });
+    });
+
+    it('Update a Recruiters with missing info', (done) => {
+      request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(400);
+        done();
+      });
+    });
+
     it('Update a Recruiters info from the System', (done) => {
-      const replacement = { ...recruitersInfo, name: 'The trustworth' };
+      const replacement = { ...recruitersInfo, name: 'The trustworth', cie: 'MoneyMan' };
       request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
@@ -95,8 +113,19 @@ describe('Testing the flow', () => {
       });
     });
 
-    it('Delete a specific Recruiters', () => {
-      expect(false).to.be(true);
+    it('Delete a specific Recruiters', (done) => {
+      request.delete(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp, info) => {
+        expect(err).to.be(null);
+        expect(JSON.parse(info).n).to.not.be(undefined);
+        request.get(`${url}/recruiters`, (error, response, body) => {
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          const parsed = JSON.parse(body);
+          console.log('PARSED:', parsed, iDToDelete.recruiters);
+          expect(parsed[0]._id).to.not.be(iDToDelete.recruiters);
+          done();
+        });
+      });
     });
   });
 

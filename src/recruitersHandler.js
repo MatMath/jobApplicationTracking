@@ -1,11 +1,13 @@
 // Global import
 const express = require('express');
+const Boom = require('boom');
+const Joi = require('joi');
 
 // costum import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
-const { dbName } = require('./objectStructure');
-const { customError } = require('./errorHandling');
+const { dbName, recruitersInfoSchema } = require('./objectStructure');
+
 
 const router = express.Router();
 let db = getDbHandle();
@@ -25,30 +27,40 @@ router.get('/', (req, res) => {
     return res.json(results);
   });
 });
-router.post('/', (req, res) => {
-  db.collection(recruiters).save(req.body, (err, result) => {
-    if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
-    log.info({ fnct: 'Push recruiters', data: result }, 'saved to database');
-    return res.redirect('/');
-  });
+router.post('/', (req, res, next) => {
+  if (!req.body) { next(Boom.badRequest('Missing data')); }
+  Joi.validate(req.body, recruitersInfoSchema)
+    .then(() => db.collection(recruiters).save(req.body, (err) => {
+      if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
+      log.info({ fnct: 'Push recruiters' }, 'saved to database');
+      return res.redirect('/');
+    }))
+    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
 router.put('/', (req, res, next) => {
   const { id, data } = req.body;
-  if (!id || !data) {
-    next(customError('Missing Data', 400));
-  }
-  db.collection(recruiters).save(req.body.data, (err, result) => {
-    if (err) return log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
-    log.info({ fnct: 'Push recruiters', data: result }, 'saved to database');
-    return res.redirect('/');
-  });
+  if (!id || !data) { next(Boom.badRequest('Missing data')); }
+  Joi.validate(data, recruitersInfoSchema)
+    .then(() => db.collection(recruiters).save(req.body.data, (err) => {
+      if (err) return log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
+      log.info({ fnct: 'Push recruiters' }, 'saved to database');
+      return res.redirect('/');
+    }))
+    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
-router.delete('/', (req, res) => {
-  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
-  db.collection(recruiters).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
-    return res.json(data);
-  });
+router.delete('/', (req, res, next) => {
+  if (req.body.id) {
+    db.collection(recruiters).remove({ id: req.body.id }, { w: 1 }, (err, data) => {
+      if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
+      return res.json(data);
+    });
+  } else {
+    if (process.env.NODE_ENV !== 'test' && !req.body.id) { next(Boom.badRequest('Missing ID')); }
+    db.collection(recruiters).remove(null, null, (err, data) => {
+      if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
+      return res.json(data);
+    });
+  }
 });
 
 module.exports = router;

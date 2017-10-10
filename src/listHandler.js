@@ -5,7 +5,6 @@ const express = require('express');
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
 const { dbName } = require('./objectStructure');
-const { customError } = require('./errorHandling');
 
 const router = express.Router();
 let db = getDbHandle();
@@ -36,7 +35,7 @@ router.post('/', (req, res) => {
 
 router.delete('/', (req, res) => {
   if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
-  db.collection(job).remove(null, null, (err, data) => {
+  return db.collection(job).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
