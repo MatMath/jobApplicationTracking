@@ -1,40 +1,85 @@
+const Joi = require('joi');
+
 const company = {
-  name: '',
-  location: '',
-  gps: {},
-  contact: '',
-  link: '',
+  name: undefined,
+  location: undefined,
+  gps: {
+    type: undefined,
+    coordinates: [0, 0],
+  },
+  contact: undefined,
+  link: undefined,
+};
+
+const companySchema = {
+  name: Joi.string().required(),
+  location: Joi.string().required(),
+  gps: {
+    type: Joi.string(),
+    coordinates: Joi.array().length(2),
+  },
+  contact: Joi.string(),
+  link: Joi.string(),
 };
 
 const recruitersInfo = {
-  cie: '',
-  name: '',
+  cie: undefined,
+  name: undefined,
+};
+
+const recruitersInfoSchema = {
+  cie: Joi.string().required(),
+  name: Joi.string().required(),
 };
 
 const meetingInfo = {
-  date: '',
+  date: undefined,
   participants: [],
-  purpose: '',
-  challenge: '',
-  notes: '',
+  purpose: undefined,
+  challenge: undefined,
+  notes: undefined,
+};
+
+const meetingInfoSchema = {
+  date: Joi.number().required(),
+  participants: Joi.array(),
+  purpose: Joi.string().required(),
+  challenge: Joi.string(),
+  notes: Joi.string(),
 };
 
 const applicationType = ['Recruiters', 'Direct'];
 
 const globalStructure = {
-  location: '',
-  website: '',
-  applicationType: '',
+  location: undefined,
+  website: undefined,
+  applicationType: undefined,
   recruiters: recruitersInfo,
   company,
-  title: '',
-  description: '',
-  date: '',
+  title: undefined,
+  description: undefined,
+  date: undefined,
   application: false,
   answer_receive: false,
   meeting: [],
-  notes: '',
-  cover_letter: '',
+  notes: undefined,
+  cover_letter: undefined,
+};
+
+const globalStructureSchema = {
+  location: Joi.string(),
+  website: Joi.string(),
+  applicationType: Joi.string(),
+  recruiters: recruitersInfoSchema,
+  company: companySchema,
+  title: Joi.string(),
+  description: Joi.string(),
+  date: Joi.number(),
+  application: Joi.boolean(),
+  answer_receive: Joi.boolean(),
+  meeting: Joi.array(),
+  notes: Joi.string(),
+  cover_letter: Joi.string(),
 };
 
 const dbName = {
@@ -45,9 +90,13 @@ const dbName = {
 
 module.exports = {
   globalStructure,
+  globalStructureSchema,
   meetingInfo,
+  meetingInfoSchema,
   applicationType,
   recruitersInfo,
+  recruitersInfoSchema,
   company,
+  companySchema,
   dbName,
 };

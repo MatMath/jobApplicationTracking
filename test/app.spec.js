@@ -1,11 +1,19 @@
 /* eslint-disable no-underscore-dangle */
 const request = require('request');
 const expect = require('expect.js');
+const Joi = require('joi');
 
 const port = 3456;
 const url = `http://localhost:${port}`;
 const app = require('../src/app');
-const { globalStructure, company, recruitersInfo } = require('../src/objectStructure');
+const {
+  globalStructure,
+  globalStructureSchema,
+  company,
+  companySchema,
+  recruitersInfo,
+  recruitersInfoSchema,
+} = require('../src/objectStructure');
 
 let server;
 const iDToDelete = {
@@ -29,7 +37,21 @@ describe('Testing the flow', () => {
   after(() => {
     server.close();
   });
-  describe.only('Recruiters flow', () => {
+
+  it('Test the Default data structure', (done) => {
+    const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
+    const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
+    const list = { ...globalStructure, company: cie, recruiters: recru };
+    Joi.validate(cie, companySchema)
+      .then(() => Joi.validate(recru, recruitersInfoSchema))
+      .then(() => Joi.validate(list, globalStructureSchema))
+      .then(() => done())
+      .catch((err) => {
+        expect(err).to.be(null);
+      });
+  });
+
+  describe('Recruiters flow', () => {
     it('delete all testing RecruitersInfo to clean the DB', (done) => {
       // Delete info
       request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
@@ -67,7 +89,6 @@ describe('Testing the flow', () => {
     it('Update a Recruiters info from the System', (done) => {
       const replacement = { ...recruitersInfo, name: 'The trustworth' };
       request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
-        console.log('error:', err, resp.message);
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
         done();
