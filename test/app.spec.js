@@ -105,25 +105,42 @@ describe('Testing the flow', () => {
     });
 
     it('Update a Recruiters info from the System', (done) => {
-      const replacement = { ...recruitersInfo, name: 'The trustworth', cie: 'MoneyMan' };
-      request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
-        expect(err).to.be(null);
-        expect(resp.statusCode).to.be(302);
-        done();
+      const replacement = { ...recruitersInfo, name: 'The trustworthy', cie: 'MoneyMan' };
+      request.get(`${url}/recruiters`, (error, response, body) => {
+        const initLength = JSON.parse(body).length;
+        request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
+          expect(err).to.be(null);
+          expect(resp.statusCode).to.be(302);
+          request.get(`${url}/recruiters`, (e, r, info) => {
+            expect(e).to.be(null);
+            console.log('initLength VS infoLength', initLength, JSON.parse(info));
+            const final = JSON.parse(info);
+            expect(final.length).to.be(initLength);
+            expect(final[0].name).to.be(replacement.name);
+            done();
+          });
+        });
       });
     });
 
     it('Delete a specific Recruiters', (done) => {
-      request.delete(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp, info) => {
-        expect(err).to.be(null);
-        expect(JSON.parse(info).n).to.not.be(undefined);
-        request.get(`${url}/recruiters`, (error, response, body) => {
-          expect(error).to.be(null);
-          expect(response.statusCode).to.be(200);
-          const parsed = JSON.parse(body);
-          console.log('PARSED:', parsed, iDToDelete.recruiters);
-          expect(parsed[0]._id).to.not.be(iDToDelete.recruiters);
-          done();
+      const newApplication = { ...recruitersInfo, name: 'Bob the re-re-Recruiters', cie: 'under world' };
+      request.post(`${url}/recruiters`, { form: newApplication }, (e, r) => {
+        expect(e).to.be(null);
+        expect(r.statusCode).to.be(302);
+        // Get Recru
+        request.delete(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp, info) => {
+          expect(err).to.be(null);
+          expect(JSON.parse(info).n).to.not.be(undefined);
+          request.get(`${url}/recruiters`, (error, response, body) => {
+            console.log('BODY:', body);
+            expect(error).to.be(null);
+            expect(response.statusCode).to.be(200);
+            const parsed = JSON.parse(body);
+            console.log('PARSED:', parsed, iDToDelete.recruiters);
+            expect(parsed[0]._id).to.not.be(iDToDelete.recruiters);
+            done();
+          });
         });
       });
     });

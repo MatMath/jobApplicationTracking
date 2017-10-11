@@ -2,6 +2,7 @@
 const express = require('express');
 const Boom = require('boom');
 const Joi = require('joi');
+const { ObjectID } = require('mongodb');
 
 // costum import
 const { log } = require('./logs');
@@ -41,8 +42,11 @@ router.put('/', (req, res, next) => {
   const { id, data } = req.body;
   if (!id || !data) { next(Boom.badRequest('Missing data')); }
   Joi.validate(data, recruitersInfoSchema)
-    .then(() => db.collection(recruiters).save(req.body.data, (err) => {
-      if (err) return log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
+    .then(() => db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(id) }, req.body.data, (err) => {
+      if (err) {
+        log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
+        return next(Boom.teapot('DB cannot make coffee', err));
+      }
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
       return res.redirect('/');
     }))
@@ -50,7 +54,7 @@ router.put('/', (req, res, next) => {
 });
 router.delete('/', (req, res, next) => {
   if (req.body.id) {
-    db.collection(recruiters).remove({ id: req.body.id }, { w: 1 }, (err, data) => {
+    db.collection(recruiters).remove({ _id: ObjectID(req.body.id) }, { w: 1 }, (err, data) => {
       if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
       return res.json(data);
     });
