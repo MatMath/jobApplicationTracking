@@ -113,7 +113,6 @@ describe('Testing the flow', () => {
           expect(resp.statusCode).to.be(302);
           request.get(`${url}/recruiters`, (e, r, info) => {
             expect(e).to.be(null);
-            console.log('initLength VS infoLength', initLength, JSON.parse(info));
             const final = JSON.parse(info);
             expect(final.length).to.be(initLength);
             expect(final[0].name).to.be(replacement.name);
@@ -133,11 +132,9 @@ describe('Testing the flow', () => {
           expect(err).to.be(null);
           expect(JSON.parse(info).n).to.not.be(undefined);
           request.get(`${url}/recruiters`, (error, response, body) => {
-            console.log('BODY:', body);
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
             const parsed = JSON.parse(body);
-            console.log('PARSED:', parsed, iDToDelete.recruiters);
             expect(parsed[0]._id).to.not.be(iDToDelete.recruiters);
             done();
           });
@@ -146,7 +143,7 @@ describe('Testing the flow', () => {
     });
   });
 
-  describe('Cie Flow', () => {
+  describe.only('Cie Flow', () => {
     it('delete all testing Cie to clean the DB', (done) => {
       // Delete info
       request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
@@ -173,17 +170,65 @@ describe('Testing the flow', () => {
           expect(error).to.be(null);
           expect(response.statusCode).to.be(200);
           const parsed = JSON.parse(body);
+          iDToDelete.cie = parsed[0]._id;
           expect(parsed.length).to.be(1);
           expect(parsed[0].name).to.be('AMC, Awesome Complex Cie');
           done();
         });
       });
     });
-    it('Update a Cie info from the System', () => {
-      expect(false).to.be(true);
+    it('Add a new cie with missing info', (done) => {
+      // Add Recru
+      const newApplication = { ...company, name: 'Still missing info' };
+      request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(400);
+        done();
+      });
     });
-    it('Delete a specific Cie', () => {
-      expect(false).to.be(true);
+    it('Update a Recruiters with missing info', (done) => {
+      request.put(`${url}/cie`, { form: { id: iDToDelete.cie } }, (err, resp) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(400);
+        done();
+      });
+    });
+    it('Update a cie info from the System', (done) => {
+      const replacement = { ...company, name: 'Fun Fun Cie', location: 'Dublin' };
+      request.get(`${url}/cie`, (error, response, body) => {
+        const initLength = JSON.parse(body).length;
+        request.put(`${url}/cie`, { form: { id: iDToDelete.cie, data: replacement } }, (err, resp) => {
+          expect(err).to.be(null);
+          expect(resp.statusCode).to.be(302);
+          request.get(`${url}/cie`, (e, r, info) => {
+            expect(e).to.be(null);
+            const final = JSON.parse(info);
+            expect(final.length).to.be(initLength);
+            expect(final[0].name).to.be(replacement.name);
+            done();
+          });
+        });
+      });
+    });
+
+    it('Delete a specific cie', (done) => {
+      const newCie = { ...company, name: 'Only listed Cie', location: 'under world' };
+      request.post(`${url}/cie`, { form: newCie }, (e, r) => {
+        expect(e).to.be(null);
+        expect(r.statusCode).to.be(302);
+        // Get Recru
+        request.delete(`${url}/cie`, { form: { id: iDToDelete.cie } }, (err, resp, info) => {
+          expect(err).to.be(null);
+          expect(JSON.parse(info).n).to.not.be(undefined);
+          request.get(`${url}/cie`, (error, response, body) => {
+            expect(error).to.be(null);
+            expect(response.statusCode).to.be(200);
+            const parsed = JSON.parse(body);
+            expect(parsed[0]._id).to.not.be(iDToDelete.recruiters);
+            done();
+          });
+        });
+      });
     });
   });
 

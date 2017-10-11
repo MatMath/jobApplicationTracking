@@ -1,10 +1,13 @@
 // Global import
 const express = require('express');
+const Boom = require('boom');
+const Joi = require('joi');
+const { ObjectID } = require('mongodb');
 
 // costum import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
-const { dbName } = require('./objectStructure');
+const { dbName, companySchema } = require('./objectStructure');
 
 const router = express.Router();
 let db = getDbHandle();
@@ -24,19 +27,43 @@ router.get('/', (req, res) => {
     return res.json(results);
   });
 });
-router.post('/', (req, res) => {
-  db.collection(cie).save(req.body, (err, result) => {
-    if (err) return log.warn({ fnct: 'Push New company', error: err }, 'Error in the POST');
-    log.info({ fnct: 'Push cie', data: result }, 'saved to database');
-    return res.redirect('/');
-  });
+router.post('/', (req, res, next) => {
+  if (!req.body) { next(Boom.badRequest('Missing data')); }
+  Joi.validate(req.body, companySchema)
+    .then(() => db.collection(cie).save(req.body, (err) => {
+      if (err) return log.warn({ fnct: 'Push New Company', error: err }, 'Error in the POST');
+      log.info({ fnct: 'Push company' }, 'saved to database');
+      return res.redirect('/');
+    }))
+    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
-router.delete('/', (req, res) => {
-  if (process.env.NODE_ENV !== 'test') { return res.redirect('/'); }
-  db.collection(cie).remove(null, null, (err, data) => {
-    if (err) return log.warn({ fnct: 'Delete company', error: err }, 'Error in the Delete');
-    return res.json(data);
-  });
+router.put('/', (req, res, next) => {
+  const { id, data } = req.body;
+  if (!id || !data) { next(Boom.badRequest('Missing data')); }
+  Joi.validate(data, companySchema)
+    .then(() => db.collection(cie).findOneAndUpdate({ _id: ObjectID(id) }, req.body.data, (err) => {
+      if (err) {
+        log.warn({ fnct: 'Put Old Company', error: err }, 'Error in the POST');
+        return next(Boom.teapot('DB cannot make coffee', err));
+      }
+      log.info({ fnct: 'Push company' }, 'saved to database');
+      return res.redirect('/');
+    }))
+    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+});
+router.delete('/', (req, res, next) => {
+  if (req.body.id) {
+    db.collection(cie).remove({ _id: ObjectID(req.body.id) }, { w: 1 }, (err, data) => {
+      if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
+      return res.json(data);
+    });
+  } else {
+    if (process.env.NODE_ENV !== 'test' && !req.body.id) { next(Boom.badRequest('Missing ID')); }
+    db.collection(cie).remove(null, null, (err, data) => {
+      if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
+      return res.json(data);
+    });
+  }
 });
 
 module.exports = router;
