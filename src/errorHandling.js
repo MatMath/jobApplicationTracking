@@ -6,7 +6,8 @@ const routeNotFound = (req, res, next) => {
   next(err);
 };
 
-const genericErrorHandling = (err, req, res, next) => {
+// 4 argument needed for express to know it is error handling
+const genericErrorHandling = (err, req, res, next) => { // eslint-disable-line no-unused-vars
   if (err.isBoom) {
     return res.status(err.output.statusCode).send({ ...err.output.payload, data: err.data });
   }

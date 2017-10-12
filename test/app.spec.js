@@ -143,7 +143,7 @@ describe('Testing the flow', () => {
     });
   });
 
-  describe.only('Cie Flow', () => {
+  describe('Cie Flow', () => {
     it('delete all testing Cie to clean the DB', (done) => {
       // Delete info
       request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
@@ -256,25 +256,79 @@ describe('Testing the flow', () => {
       });
     });
     it('Add a new listing in the DB', (done) => {
-      const newApplication = { ...globalStructure, location: 'over the rainbow' };
+      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
+      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
+      const newApplication = {
+        ...globalStructure,
+        company: cie,
+        recruiters: recru,
+        title: 'FullStack',
+      };
       request.post(`${url}/list`, { form: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
         request.get(`${url}/list`, (error, response, body) => {
           expect(error).to.be(null);
           expect(response.statusCode).to.be(200);
-          expect(JSON.parse(body).length).to.be(1);
+          const parsed = JSON.parse(body);
+          iDToDelete.listing = parsed[0]._id;
+          expect(parsed.length).to.be(1);
+          expect(parsed[0].title).to.be(newApplication.title);
+          expect(parsed[0]._id).to.not.be(undefined);
           done();
         });
       });
     });
-
-    it('Update a old listing from the System', () => {
-      expect(false).to.be(true);
+    it('Update a listing info from the System', (done) => {
+      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
+      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
+      const differentApplication = {
+        ...globalStructure,
+        company: cie,
+        recruiters: recru,
+        title: 'NodeJs API Dev',
+      };
+      request.get(`${url}/list`, (error, response, body) => {
+        const initLength = JSON.parse(body).length;
+        request.put(`${url}/list`, { form: { id: iDToDelete.listing, data: differentApplication } }, (err, resp) => {
+          expect(err).to.be(null);
+          expect(resp.statusCode).to.be(302);
+          request.get(`${url}/list`, (e, r, info) => {
+            expect(e).to.be(null);
+            const final = JSON.parse(info);
+            expect(final.length).to.be(initLength);
+            expect(final[0].title).to.be(differentApplication.title);
+            done();
+          });
+        });
+      });
     });
 
-    it('Delete a specific listing', () => {
-      expect(false).to.be(true);
+    it('Delete a specific listing', (done) => {
+      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
+      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
+      const newCie = {
+        ...globalStructure,
+        company: cie,
+        recruiters: recru,
+        title: 'FrontEnd Specialist not in VueJs',
+      };
+      request.post(`${url}/list`, { form: newCie }, (e, r) => {
+        expect(e).to.be(null);
+        expect(r.statusCode).to.be(302);
+        // Get Recru
+        request.delete(`${url}/list`, { form: { id: iDToDelete.listing } }, (err, resp, info) => {
+          expect(err).to.be(null);
+          expect(JSON.parse(info).n).to.not.be(undefined);
+          request.get(`${url}/list`, (error, response, body) => {
+            expect(error).to.be(null);
+            expect(response.statusCode).to.be(200);
+            const parsed = JSON.parse(body);
+            expect(parsed[0]._id).to.not.be(iDToDelete.listing);
+            done();
+          });
+        });
+      });
     });
   });
 
