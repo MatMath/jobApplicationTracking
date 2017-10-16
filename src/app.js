@@ -1,6 +1,7 @@
 // Generic libs
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 // custom libs
 const { log, getBunyanLog } = require('./logs');
@@ -18,6 +19,7 @@ const listHandler = require('./listHandler');
 const recruitersHandler = require('./recruitersHandler');
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 log.info({ fnct: 'App' }, 'Starting the App.js file');
