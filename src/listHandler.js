@@ -29,8 +29,8 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res, next) => {
-  if (!req.body || Object.keys(req.body).length === 0) { next(Boom.badRequest('Missing data')); }
-  Joi.validate(req.body, globalStructureSchema)
+  if (!req.body || Object.keys(req.body).length === 0) { return next(Boom.badRequest('Missing data')); }
+  return Joi.validate(req.body, globalStructureSchema)
     .then(() => db.collection(job).save(req.body, (err) => {
       if (err) return log.warn({ fnct: 'Push New Job', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
@@ -41,8 +41,8 @@ router.post('/', (req, res, next) => {
 
 router.put('/', (req, res, next) => {
   const { id, data } = req.body;
-  if (!id || !data) { next(Boom.badRequest('Missing data')); }
-  Joi.validate(data, globalStructureSchema)
+  if (!id || !data) { return next(Boom.badRequest('Missing data')); }
+  return Joi.validate(data, globalStructureSchema)
     .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(id) }, data, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Job', error: err }, 'Error in the POST');
@@ -56,17 +56,16 @@ router.put('/', (req, res, next) => {
 
 router.delete('/', (req, res, next) => {
   if (req.body.id) {
-    db.collection(job).remove({ _id: ObjectID(req.body.id) }, { w: 1 }, (err, data) => {
-      if (err) return log.warn({ fnct: 'Delete Job', error: err }, 'Error in the Delete');
-      return res.json(data);
-    });
-  } else {
-    if (process.env.NODE_ENV !== 'test' && !req.body.id) { next(Boom.badRequest('Missing ID')); }
-    db.collection(job).remove(null, null, (err, data) => {
+    return db.collection(job).remove({ _id: ObjectID(req.body.id) }, { w: 1 }, (err, data) => {
       if (err) return log.warn({ fnct: 'Delete Job', error: err }, 'Error in the Delete');
       return res.json(data);
     });
   }
+  if (process.env.NODE_ENV !== 'test' && !req.body.id) { return next(Boom.badRequest('Missing ID')); }
+  return db.collection(job).remove(null, null, (err, data) => {
+    if (err) return log.warn({ fnct: 'Delete Job', error: err }, 'Error in the Delete');
+    return res.json(data);
+  });
 });
 
 module.exports = router;
