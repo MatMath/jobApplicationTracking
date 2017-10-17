@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
   });
 });
 router.post('/', (req, res, next) => {
-  if (!req.body) { next(Boom.badRequest('Missing data')); }
+  if (!req.body || Object.keys(req.body).length === 0) { next(Boom.badRequest('Missing data')); }
   Joi.validate(req.body, companySchema)
     .then(() => db.collection(cie).save(req.body, (err) => {
       if (err) return log.warn({ fnct: 'Push New Company', error: err }, 'Error in the POST');

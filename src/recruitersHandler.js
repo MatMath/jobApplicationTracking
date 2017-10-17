@@ -29,7 +29,7 @@ router.get('/', (req, res) => {
   });
 });
 router.post('/', (req, res, next) => {
-  if (!req.body) { next(Boom.badRequest('Missing data')); }
+  if (!req.body || Object.keys(req.body).length === 0) { next(Boom.badRequest('Missing data')); }
   Joi.validate(req.body, recruitersInfoSchema)
     .then(() => db.collection(recruiters).save(req.body, (err) => {
       if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');

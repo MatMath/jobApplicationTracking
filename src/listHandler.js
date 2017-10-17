@@ -29,7 +29,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res, next) => {
-  if (!req.body) { next(Boom.badRequest('Missing data')); }
+  if (!req.body || Object.keys(req.body).length === 0) { next(Boom.badRequest('Missing data')); }
   Joi.validate(req.body, globalStructureSchema)
     .then(() => db.collection(job).save(req.body, (err) => {
       if (err) return log.warn({ fnct: 'Push New Job', error: err }, 'Error in the POST');
