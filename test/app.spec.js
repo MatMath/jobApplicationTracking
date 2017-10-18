@@ -41,7 +41,7 @@ describe('Testing the flow', () => {
   it('Test the Default data structure', (done) => {
     const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
     const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
-    const list = { ...globalStructure, company: cie, recruiters: recru };
+    const list = { ...globalStructure, company: 'string1', recruiters: 'string2' };
     Joi.validate(cie, companySchema)
       .then(() => Joi.validate(recru, recruitersInfoSchema))
       .then(() => Joi.validate(list, globalStructureSchema))
@@ -256,12 +256,10 @@ describe('Testing the flow', () => {
       });
     });
     it('Add a new listing in the DB', (done) => {
-      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
-      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
       const newApplication = {
         ...globalStructure,
-        company: cie,
-        recruiters: recru,
+        company: 'Annoying',
+        recruiters: 'spamming bot',
         title: 'FullStack',
       };
       request.post(`${url}/list`, { json: newApplication }, (err, resp) => {
@@ -280,12 +278,10 @@ describe('Testing the flow', () => {
       });
     });
     it('Update a listing info from the System', (done) => {
-      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
-      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
       const differentApplication = {
         ...globalStructure,
-        company: cie,
-        recruiters: recru,
+        company: 'Will Be Awesome',
+        recruiters: 'NA',
         title: 'NodeJs API Dev',
       };
       request.get(`${url}/list`, (error, response, body) => {
@@ -305,12 +301,10 @@ describe('Testing the flow', () => {
     });
 
     it('Delete a specific listing', (done) => {
-      const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
-      const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
       const newCie = {
         ...globalStructure,
-        company: cie,
-        recruiters: recru,
+        company: 'NoWhere',
+        recruiters: 'spamming bot 2',
         title: 'FrontEnd Specialist not in VueJs',
       };
       request.post(`${url}/list`, { json: newCie }, (e, r) => {
