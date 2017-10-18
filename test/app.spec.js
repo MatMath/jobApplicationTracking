@@ -21,6 +21,10 @@ const iDToDelete = {
   cie: '',
   recruiters: '',
 };
+const titleLoc = {
+  title: 'FullStack',
+  location: 'Dublin',
+};
 
 describe('Testing the flow', () => {
   before((done) => {
@@ -41,7 +45,12 @@ describe('Testing the flow', () => {
   it('Test the Default data structure', (done) => {
     const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
     const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
-    const list = { ...globalStructure, company: 'string1', recruiters: 'string2' };
+    const list = {
+      ...globalStructure,
+      ...titleLoc,
+      company: 'string1',
+      recruiters: 'string2',
+    };
     Joi.validate(cie, companySchema)
       .then(() => Joi.validate(recru, recruitersInfoSchema))
       .then(() => Joi.validate(list, globalStructureSchema))
@@ -258,6 +267,7 @@ describe('Testing the flow', () => {
     it('Add a new listing in the DB', (done) => {
       const newApplication = {
         ...globalStructure,
+        ...titleLoc,
         company: 'Annoying',
         recruiters: 'spamming bot',
         title: 'FullStack',
@@ -280,6 +290,7 @@ describe('Testing the flow', () => {
     it('Update a listing info from the System', (done) => {
       const differentApplication = {
         ...globalStructure,
+        ...titleLoc,
         company: 'Will Be Awesome',
         recruiters: 'NA',
         title: 'NodeJs API Dev',
@@ -303,6 +314,7 @@ describe('Testing the flow', () => {
     it('Delete a specific listing', (done) => {
       const newCie = {
         ...globalStructure,
+        ...titleLoc,
         company: 'NoWhere',
         recruiters: 'spamming bot 2',
         title: 'FrontEnd Specialist not in VueJs',

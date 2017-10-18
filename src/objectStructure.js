@@ -67,14 +67,14 @@ const globalStructure = {
 };
 
 const globalStructureSchema = {
-  location: Joi.string(),
+  location: Joi.string().required(),
   website: Joi.string(),
   applicationType: Joi.string(),
   recruiters: Joi.string(),
-  company: Joi.string(),
-  title: Joi.string(),
+  company: Joi.string().required(),
+  title: Joi.string().required(),
   description: Joi.string(),
-  date: Joi.number(),
+  date: Joi.date(),
   application: Joi.boolean(),
   answer_receive: Joi.boolean(),
   meeting: Joi.array(),
