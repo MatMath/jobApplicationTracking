@@ -20,7 +20,8 @@ const recruitersHandler = require('./recruitersHandler');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 log.info({ fnct: 'App' }, 'Starting the App.js file');
 

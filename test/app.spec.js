@@ -54,9 +54,9 @@ describe('Testing the flow', () => {
   describe('Recruiters flow', () => {
     it('delete all testing RecruitersInfo to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/recruiters`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/recruiters`, { json: { info: 'not real info' } }, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(JSON.parse(info).n).to.not.be(undefined);
+        expect(info.n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/recruiters`, (error, response, body) => {
           expect(error).to.be(null);
@@ -70,7 +70,7 @@ describe('Testing the flow', () => {
     it('Add a new RecruitersInfo in the System', (done) => {
       // Add Recru
       const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters', cie: 'water world' };
-      request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
+      request.post(`${url}/recruiters`, { json: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
         // Get Recru
@@ -89,7 +89,7 @@ describe('Testing the flow', () => {
     it('Add a new RecruitersInfo with missing info', (done) => {
       // Add Recru
       const newApplication = { ...recruitersInfo, name: 'Bob the Recruiters' };
-      request.post(`${url}/recruiters`, { form: newApplication }, (err, resp) => {
+      request.post(`${url}/recruiters`, { json: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
@@ -97,7 +97,7 @@ describe('Testing the flow', () => {
     });
 
     it('Update a Recruiters with missing info', (done) => {
-      request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp) => {
+      request.put(`${url}/recruiters`, { json: { id: iDToDelete.recruiters } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
@@ -108,7 +108,7 @@ describe('Testing the flow', () => {
       const replacement = { ...recruitersInfo, name: 'The trustworthy', cie: 'MoneyMan' };
       request.get(`${url}/recruiters`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/recruiters`, { form: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
+        request.put(`${url}/recruiters`, { json: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(302);
           request.get(`${url}/recruiters`, (e, r, info) => {
@@ -124,13 +124,13 @@ describe('Testing the flow', () => {
 
     it('Delete a specific Recruiters', (done) => {
       const newApplication = { ...recruitersInfo, name: 'Bob the re-re-Recruiters', cie: 'under world' };
-      request.post(`${url}/recruiters`, { form: newApplication }, (e, r) => {
+      request.post(`${url}/recruiters`, { json: newApplication }, (e, r) => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(302);
         // Get Recru
-        request.delete(`${url}/recruiters`, { form: { id: iDToDelete.recruiters } }, (err, resp, info) => {
+        request.delete(`${url}/recruiters`, { json: { id: iDToDelete.recruiters } }, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(JSON.parse(info).n).to.not.be(undefined);
+          expect(info.n).to.not.be(undefined);
           request.get(`${url}/recruiters`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
@@ -146,9 +146,9 @@ describe('Testing the flow', () => {
   describe('Cie Flow', () => {
     it('delete all testing Cie to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/cie`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/cie`, { json: { info: 'not real info' } }, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(JSON.parse(info).n).to.not.be(undefined);
+        expect(info.n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/cie`, (error, response, body) => {
           expect(error).to.be(null);
@@ -162,7 +162,7 @@ describe('Testing the flow', () => {
     it('Add a new Cie in the System', (done) => {
       // Add Cie
       const newApplication = { ...company, location: 'over the rainbow', name: 'AMC, Awesome Complex Cie' };
-      request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
+      request.post(`${url}/cie`, { json: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
         // Get Cie
@@ -180,14 +180,14 @@ describe('Testing the flow', () => {
     it('Add a new cie with missing info', (done) => {
       // Add Recru
       const newApplication = { ...company, name: 'Still missing info' };
-      request.post(`${url}/cie`, { form: newApplication }, (err, resp) => {
+      request.post(`${url}/cie`, { json: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
       });
     });
     it('Update a Recruiters with missing info', (done) => {
-      request.put(`${url}/cie`, { form: { id: iDToDelete.cie } }, (err, resp) => {
+      request.put(`${url}/cie`, { json: { id: iDToDelete.cie } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
@@ -197,7 +197,7 @@ describe('Testing the flow', () => {
       const replacement = { ...company, name: 'Fun Fun Cie', location: 'Dublin' };
       request.get(`${url}/cie`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/cie`, { form: { id: iDToDelete.cie, data: replacement } }, (err, resp) => {
+        request.put(`${url}/cie`, { json: { id: iDToDelete.cie, data: replacement } }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(302);
           request.get(`${url}/cie`, (e, r, info) => {
@@ -213,13 +213,13 @@ describe('Testing the flow', () => {
 
     it('Delete a specific cie', (done) => {
       const newCie = { ...company, name: 'Only listed Cie', location: 'under world' };
-      request.post(`${url}/cie`, { form: newCie }, (e, r) => {
+      request.post(`${url}/cie`, { json: newCie }, (e, r) => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(302);
         // Get Recru
-        request.delete(`${url}/cie`, { form: { id: iDToDelete.cie } }, (err, resp, info) => {
+        request.delete(`${url}/cie`, { json: { id: iDToDelete.cie } }, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(JSON.parse(info).n).to.not.be(undefined);
+          expect(info.n).to.not.be(undefined);
           request.get(`${url}/cie`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
@@ -235,9 +235,9 @@ describe('Testing the flow', () => {
   describe('List Flow', () => {
     it('delete all testing listing to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/list`, { form: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/list`, { json: { info: 'not real info' } }, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(JSON.parse(info).n).to.not.be(undefined);
+        expect(info.n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/list`, (error, response, body) => {
           expect(error).to.be(null);
@@ -249,7 +249,7 @@ describe('Testing the flow', () => {
     });
 
     it('Add a new listing with missing info', (done) => {
-      request.post(`${url}/list`, { form: { info: 'not real info' } }, (err, resp) => {
+      request.post(`${url}/list`, { json: { info: 'not real info' } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
@@ -264,7 +264,7 @@ describe('Testing the flow', () => {
         recruiters: recru,
         title: 'FullStack',
       };
-      request.post(`${url}/list`, { form: newApplication }, (err, resp) => {
+      request.post(`${url}/list`, { json: newApplication }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(302);
         request.get(`${url}/list`, (error, response, body) => {
@@ -290,7 +290,7 @@ describe('Testing the flow', () => {
       };
       request.get(`${url}/list`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/list`, { form: { id: iDToDelete.listing, data: differentApplication } }, (err, resp) => {
+        request.put(`${url}/list`, { json: { id: iDToDelete.listing, data: differentApplication } }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(302);
           request.get(`${url}/list`, (e, r, info) => {
@@ -313,13 +313,13 @@ describe('Testing the flow', () => {
         recruiters: recru,
         title: 'FrontEnd Specialist not in VueJs',
       };
-      request.post(`${url}/list`, { form: newCie }, (e, r) => {
+      request.post(`${url}/list`, { json: newCie }, (e, r) => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(302);
         // Get Recru
-        request.delete(`${url}/list`, { form: { id: iDToDelete.listing } }, (err, resp, info) => {
+        request.delete(`${url}/list`, { json: { id: iDToDelete.listing } }, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(JSON.parse(info).n).to.not.be(undefined);
+          expect(info.n).to.not.be(undefined);
           request.get(`${url}/list`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
