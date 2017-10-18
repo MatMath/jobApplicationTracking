@@ -34,7 +34,7 @@ router.post('/', (req, res, next) => {
     .then(() => db.collection(recruiters).save(req.body, (err) => {
       if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
-      return res.redirect('/');
+      return res.json({ status: 'Saved to database' });
     }))
     .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
@@ -48,7 +48,7 @@ router.put('/', (req, res, next) => {
         return next(Boom.teapot('DB cannot make coffee', err));
       }
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
-      return res.redirect('/');
+      return res.json({ status: 'Saved to database' });
     }))
     .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
