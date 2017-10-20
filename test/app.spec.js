@@ -63,9 +63,9 @@ describe('Testing the flow', () => {
   describe('Recruiters flow', () => {
     it('delete all testing RecruitersInfo to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/recruiters`, { json: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/recruiters/`, { bob: 'bob' }, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(info.n).to.not.be(undefined);
+        expect(JSON.parse(info).n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/recruiters`, (error, response, body) => {
           expect(error).to.be(null);
@@ -137,9 +137,9 @@ describe('Testing the flow', () => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(200);
         // Get Recru
-        request.delete(`${url}/recruiters`, { json: { id: iDToDelete.recruiters } }, (err, resp, info) => {
+        request.delete(`${url}/recruiters/${iDToDelete.recruiters}`, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(info.n).to.not.be(undefined);
+          expect(JSON.parse(info).n).to.not.be(undefined);
           request.get(`${url}/recruiters`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
@@ -155,9 +155,9 @@ describe('Testing the flow', () => {
   describe('Cie Flow', () => {
     it('delete all testing Cie to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/cie`, { json: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/cie`, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(info.n).to.not.be(undefined);
+        expect(JSON.parse(info).n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/cie`, (error, response, body) => {
           expect(error).to.be(null);
@@ -226,9 +226,9 @@ describe('Testing the flow', () => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(200);
         // Get Recru
-        request.delete(`${url}/cie`, { json: { id: iDToDelete.cie } }, (err, resp, info) => {
+        request.delete(`${url}/cie/${iDToDelete.cie}`, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(info.n).to.not.be(undefined);
+          expect(JSON.parse(info).n).to.not.be(undefined);
           request.get(`${url}/cie`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);
@@ -244,9 +244,9 @@ describe('Testing the flow', () => {
   describe('List Flow', () => {
     it('delete all testing listing to clean the DB', (done) => {
       // Delete info
-      request.delete(`${url}/list`, { json: { info: 'not real info' } }, (err, resp, info) => {
+      request.delete(`${url}/list`, (err, resp, info) => {
         expect(err).to.be(null);
-        expect(info.n).to.not.be(undefined);
+        expect(JSON.parse(info).n).to.not.be(undefined);
         // Get info -> Empty array
         request.get(`${url}/list`, (error, response, body) => {
           expect(error).to.be(null);
@@ -323,9 +323,9 @@ describe('Testing the flow', () => {
         expect(e).to.be(null);
         expect(r.statusCode).to.be(200);
         // Get Recru
-        request.delete(`${url}/list`, { json: { id: iDToDelete.listing } }, (err, resp, info) => {
+        request.delete(`${url}/list/${iDToDelete.listing}`, (err, resp, info) => {
           expect(err).to.be(null);
-          expect(info.n).to.not.be(undefined);
+          expect(JSON.parse(info).n).to.not.be(undefined);
           request.get(`${url}/list`, (error, response, body) => {
             expect(error).to.be(null);
             expect(response.statusCode).to.be(200);

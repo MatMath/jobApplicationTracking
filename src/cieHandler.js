@@ -51,14 +51,16 @@ router.put('/', (req, res, next) => {
     }))
     .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
+router.delete('/:id', (req, res) => {
+  const { id } = req.params;
+  return db.collection(cie).remove({ _id: ObjectID(id) }, { w: 1 }, (err, data) => {
+    if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
+    return res.json(data);
+  });
+});
+
 router.delete('/', (req, res, next) => {
-  if (req.body.id) {
-    return db.collection(cie).remove({ _id: ObjectID(req.body.id) }, { w: 1 }, (err, data) => {
-      if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
-      return res.json(data);
-    });
-  }
-  if (process.env.NODE_ENV !== 'test' && !req.body.id) { return next(Boom.badRequest('Missing ID')); }
+  if (process.env.NODE_ENV !== 'test') { return next(Boom.badRequest('Not in Test mode')); }
   return db.collection(cie).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
     return res.json(data);
