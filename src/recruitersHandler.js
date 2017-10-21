@@ -39,10 +39,11 @@ router.post('/', (req, res, next) => {
     .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
 });
 router.put('/', (req, res, next) => {
-  const { id, data } = req.body;
-  if (!id || !data) { return next(Boom.badRequest('Missing data')); }
-  return Joi.validate(data, recruitersInfoSchema)
-    .then(() => db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(id) }, req.body.data, (err) => {
+  const { _id } = req.body;
+  if (!_id) { return next(Boom.badRequest('Missing data')); }
+  const tmp = { ...req.body, _id: ObjectID(_id) };
+  return Joi.validate(req.body, recruitersInfoSchema)
+    .then(() => db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));

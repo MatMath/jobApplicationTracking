@@ -1,4 +1,5 @@
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
 
 const company = {
   name: undefined,
@@ -12,6 +13,7 @@ const company = {
 };
 
 const companySchema = {
+  _id: Joi.objectId(),
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: {
@@ -28,6 +30,7 @@ const recruitersInfo = {
 };
 
 const recruitersInfoSchema = {
+  _id: Joi.objectId(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
 };
@@ -67,6 +70,7 @@ const globalStructure = {
 };
 
 const globalStructureSchema = {
+  _id: Joi.objectId(),
   location: Joi.string().required(),
   website: Joi.string(),
   applicationType: Joi.string(),

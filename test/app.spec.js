@@ -106,7 +106,7 @@ describe('Testing the flow', () => {
     });
 
     it('Update a Recruiters with missing info', (done) => {
-      request.put(`${url}/recruiters`, { json: { id: iDToDelete.recruiters } }, (err, resp) => {
+      request.put(`${url}/recruiters`, { json: { _id: iDToDelete.recruiters } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
@@ -114,10 +114,15 @@ describe('Testing the flow', () => {
     });
 
     it('Update a Recruiters info from the System', (done) => {
-      const replacement = { ...recruitersInfo, name: 'The trustworthy', cie: 'MoneyMan' };
+      const replacement = {
+        ...recruitersInfo,
+        name: 'The trustworthy',
+        cie: 'MoneyMan',
+        _id: iDToDelete.recruiters,
+      };
       request.get(`${url}/recruiters`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/recruiters`, { json: { id: iDToDelete.recruiters, data: replacement } }, (err, resp) => {
+        request.put(`${url}/recruiters`, { json: replacement }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(200);
           request.get(`${url}/recruiters`, (e, r, info) => {
@@ -196,17 +201,22 @@ describe('Testing the flow', () => {
       });
     });
     it('Update a Recruiters with missing info', (done) => {
-      request.put(`${url}/cie`, { json: { id: iDToDelete.cie } }, (err, resp) => {
+      request.put(`${url}/cie`, { json: { _id: iDToDelete.cie } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);
         done();
       });
     });
     it('Update a cie info from the System', (done) => {
-      const replacement = { ...company, name: 'Fun Fun Cie', location: 'Dublin' };
+      const replacement = {
+        ...company,
+        name: 'Fun Fun Cie',
+        location: 'Dublin',
+        _id: iDToDelete.cie,
+      };
       request.get(`${url}/cie`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/cie`, { json: { id: iDToDelete.cie, data: replacement } }, (err, resp) => {
+        request.put(`${url}/cie`, { json: replacement }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(200);
           request.get(`${url}/cie`, (e, r, info) => {
@@ -287,17 +297,29 @@ describe('Testing the flow', () => {
         });
       });
     });
+
+    it('Validate we can get a specific ID', (done) => {
+      request.get(`${url}/list/${iDToDelete.listing}`, (err, resp, body) => {
+        expect(err).to.be(null);
+        expect(resp.statusCode).to.be(200);
+        const parsed = JSON.parse(body);
+        expect(parsed._id).to.be(iDToDelete.listing);
+        done();
+      });
+    });
+
     it('Update a listing info from the System', (done) => {
       const differentApplication = {
         ...globalStructure,
         ...titleLoc,
+        _id: iDToDelete.listing,
         company: 'Will Be Awesome',
         recruiters: 'NA',
         title: 'NodeJs API Dev',
       };
       request.get(`${url}/list`, (error, response, body) => {
         const initLength = JSON.parse(body).length;
-        request.put(`${url}/list`, { json: { id: iDToDelete.listing, data: differentApplication } }, (err, resp) => {
+        request.put(`${url}/list`, { json: differentApplication }, (err, resp) => {
           expect(err).to.be(null);
           expect(resp.statusCode).to.be(200);
           request.get(`${url}/list`, (e, r, info) => {

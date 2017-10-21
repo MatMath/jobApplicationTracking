@@ -21,6 +21,14 @@ router.use((req, res, next) => {
   next();
 });
 
+router.get('/:id', (req, res) => {
+  const { id } = req.params;
+  db.collection(job).findOne({ _id: ObjectID(id) }, (err, docs) => {
+    if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
+    return res.json(docs);
+  });
+});
+
 router.get('/', (req, res) => {
   db.collection(job).find().toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
@@ -40,10 +48,11 @@ router.post('/', (req, res, next) => {
 });
 
 router.put('/', (req, res, next) => {
-  const { id, data } = req.body;
-  if (!id || !data) { return next(Boom.badRequest('Missing data')); }
-  return Joi.validate(data, globalStructureSchema)
-    .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(id) }, data, (err) => {
+  const { _id } = req.body;
+  if (!_id) { return next(Boom.badRequest('Missing data')); }
+  const tmp = { ...req.body, _id: ObjectID(_id) };
+  return Joi.validate(req.body, globalStructureSchema)
+    .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Job', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));

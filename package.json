@@ -19,6 +19,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.1",
     "joi": "^11.3.4",
+    "joi-objectid": "^2.0.0",
     "mongodb": "^2.2.31"
   },
   "devDependencies": {
