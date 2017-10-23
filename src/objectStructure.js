@@ -17,11 +17,11 @@ const companySchema = {
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: {
-    type: Joi.string(),
+    type: Joi.string().allow(''),
     coordinates: Joi.array().length(2),
   },
-  contact: Joi.string(),
-  link: Joi.string(),
+  contact: Joi.string().allow(''),
+  link: Joi.string().allow(''),
 };
 
 const recruitersInfo = {
@@ -47,8 +47,8 @@ const meetingInfoSchema = {
   date: Joi.number().required(),
   participants: Joi.array(),
   purpose: Joi.string().required(),
-  challenge: Joi.string(),
-  notes: Joi.string(),
+  challenge: Joi.string().allow(''),
+  notes: Joi.string().allow(''),
 };
 
 const applicationType = ['Recruiters', 'Direct'];
@@ -72,18 +72,18 @@ const globalStructure = {
 const globalStructureSchema = {
   _id: Joi.objectId(),
   location: Joi.string().required(),
-  website: Joi.string(),
-  applicationType: Joi.string(),
-  recruiters: Joi.string(),
+  website: Joi.string().allow(''),
+  applicationType: Joi.string().allow(''),
+  recruiters: Joi.string().allow(''),
   company: Joi.string().required(),
   title: Joi.string().required(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   date: Joi.date(),
   application: Joi.boolean(),
   answer_receive: Joi.boolean(),
   meeting: Joi.array(),
-  notes: Joi.string(),
-  cover_letter: Joi.string(),
+  notes: Joi.string().allow(''),
+  cover_letter: Joi.string().allow(''),
 };
 
 const dbName = {
