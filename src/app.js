@@ -27,6 +27,7 @@ const recruitersHandler = require('./recruitersHandler');
 // Vars:
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, cookie_secret } = require('../config.json');
 
+const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.
 passport.serializeUser((user, done) => {
   // TODO: Call DB
@@ -69,6 +70,7 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(express.static(uiFile));
 
 app.get('/login', (req, res) => {
   res.render('login', { user: req.user });
@@ -97,8 +99,7 @@ app.use('/list', listHandler);
 app.use('/recruiters', recruitersHandler);
 
 app.get('/', (req, res) => {
-  // User Info are under req.user
-  res.sendFile(`${__dirname}/index.html`); // TODO Switch that the the UI app.
+  res.sendFile(uiFile);
 });
 
 // Catch if no route match.
