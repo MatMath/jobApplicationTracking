@@ -90,6 +90,7 @@ const dbName = {
   cie: 'company',
   job: 'jobapplication',
   recruiters: 'recruiters',
+  userCollection: 'user',
 };
 
 module.exports = {

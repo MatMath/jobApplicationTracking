@@ -15,17 +15,20 @@ Now the server is running.
 $ npm test
 
 ### Flow:
-Post new Company,
-Post new Recruiters,
-Add new listing link with Cie and Recruiters.
+Login via passport -> Get the Data -> Store user data into a User Container of MongoDB.
+Get the User (Cie, Recru, List) name from his profile. (Based on the parsed email?)
 
-Querry:
-Done - Get all cie, Recruiters, list
+Option on the DB:
+- CRUD new Company
+- CRUD new Recruiters
+- CRUD new listing
+
+Query:
 todo - Extract Cie Gps?
 
 ## Todo:
 - (See issue)
-- Link Cie & Recruteurs to New posting
+- Link Cie & Recruiters to New posting
 - Deployment script
 - Front-end to retrieve / input data.
 - Passport security?

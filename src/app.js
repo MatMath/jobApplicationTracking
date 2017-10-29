@@ -23,6 +23,7 @@ const {
 const cieHandler = require('./cieHandler');
 const listHandler = require('./listHandler');
 const recruitersHandler = require('./recruitersHandler');
+const { convertDataStructure, writeUserToDB } = require('./userHandler');
 
 // Vars:
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, cookie_secret } = require('../config.json');
@@ -30,9 +31,11 @@ const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, cookie_secret } = require('../co
 const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.
 passport.serializeUser((user, done) => {
-  // TODO: Call DB
-  console.log('USER DATA:', user);
-  done(null, user);
+  const cleanUser = convertDataStructure(user);
+  writeUserToDB(cleanUser).then(() => done(null, cleanUser))
+    .catch((err) => {
+      console.log('IN THE CATCH', err);
+    });
 });
 
 passport.deserializeUser((obj, done) => {
@@ -59,7 +62,6 @@ const app = express();
 app.use(cors());
 app.set('views', path.join(__dirname, '/views'));
 app.set('view engine', 'ejs');
-app.use(express.static(path.join(__dirname, '/public')));
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -101,9 +103,10 @@ app.use('/recruiters', recruitersHandler);
 app.get('/', (req, res) => {
   res.sendFile(uiFile);
 });
+app.use(express.static(path.join(__dirname, '/public')));
 
 // Catch if no route match.
-app.use(routeNotFound);
+app.use(routeNotFound); // Should never reach here since the Front-end should catch it. ???
 
 // Error handler section
 app.use(handleDatabaseError);
@@ -114,6 +117,7 @@ app.dBconnect = dBconnect;
 function ensureAuthenticated(req, res, next) {
   if (process.env.NODE_ENV === 'test') { return next(); }
   if (req.isAuthenticated()) { return next(); }
+  log.info({ fnct: 'ensureAuthenticated' }, 'REROUTE Login');
   return res.redirect('/login');
 }
 
