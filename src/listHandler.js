@@ -17,7 +17,7 @@ let { job } = dbName;
 router.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   job = (process.env.DBJOBS) ? process.env.DBJOBS : job; // Variable name for testing the DB.
-  log.info({ fnct: 'Job request', request: req }, 'Request for the Job');
+  log.info({ fnct: 'Job request' }, 'Request for the Job');
   next();
 });
 

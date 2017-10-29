@@ -17,7 +17,7 @@ let { cie } = dbName;
 router.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   cie = (process.env.DBCIE) ? process.env.DBCIE : cie; // Variable name for testing the DB.
-  log.info({ fnct: 'Cie request', request: req }, 'Request for the Cie');
+  log.info({ fnct: 'Cie request' }, 'Request for the Cie');
   next();
 });
 
