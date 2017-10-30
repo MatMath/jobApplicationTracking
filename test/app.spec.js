@@ -4,7 +4,7 @@ const expect = require('expect.js');
 const Joi = require('joi');
 
 const port = 3456;
-const url = `http://localhost:${port}`;
+const url = `http://localhost:${port}/json`;
 const app = require('../src/app');
 const {
   globalStructure,

@@ -93,12 +93,12 @@ app.use(express.static(uiFile));
 // Get info
 app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));
 app.get('/log', (req, res) => res.json(getBunyanLog('info')));
-app.get('/basicparam', (req, res) => {
+app.get('/json/basicparam', (req, res) => {
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
-app.use('/cie', cieHandler);
-app.use('/list', listHandler);
-app.use('/recruiters', recruitersHandler);
+app.use('/json/cie', cieHandler);
+app.use('/json/list', listHandler);
+app.use('/json/recruiters', recruitersHandler);
 
 app.get('/*', (req, res) => {
   res.sendFile(uiFile);
