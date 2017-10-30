@@ -22,7 +22,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', (req, res) => {
-  db.collection(cie).find().toArray((err, results) => {
+  db.collection(cie).find({ email: req.user.email }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
@@ -42,9 +42,9 @@ router.post('/', (req, res, next) => {
 router.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
-  const tmp = { ...req.body, _id: ObjectID(_id) };
-  tmp.email = req.user.email;
-  return Joi.validate(req.body, companySchema)
+  const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
+  // I cannot use tmp because it complain about _id that it need to be a string.
+  return Joi.validate({ ...req.body, email: tmp.email }, companySchema)
     .then(() => db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Company', error: err }, 'Error in the POST');

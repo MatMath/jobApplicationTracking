@@ -26,7 +26,8 @@ const titleLoc = {
   location: 'Dublin',
 };
 
-describe('Testing the flow', () => {
+describe('Testing the flow', function bob() {
+  this.timeout(20000);
   before((done) => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
@@ -43,13 +44,24 @@ describe('Testing the flow', () => {
   });
 
   it('Test the Default data structure', (done) => {
-    const cie = { ...company, name: 'NoWhere', location: 'Everywhere' };
-    const recru = { ...recruitersInfo, cie: 'Annoying', name: 'spamming bot' };
+    const cie = {
+      ...company,
+      name: 'NoWhere',
+      location: 'Everywhere',
+      email: 'test',
+    };
+    const recru = {
+      ...recruitersInfo,
+      cie: 'Annoying',
+      name: 'spamming bot',
+      email: 'test',
+    };
     const list = {
       ...globalStructure,
       ...titleLoc,
       company: 'string1',
       recruiters: 'string2',
+      email: 'test',
     };
     Joi.validate(cie, companySchema)
       .then(() => Joi.validate(recru, recruitersInfoSchema))

@@ -115,7 +115,10 @@ app.use(genericErrorHandling);
 app.dBconnect = dBconnect;
 
 function ensureAuthenticated(req, res, next) {
-  if (process.env.NODE_ENV === 'test') { return next(); }
+  if (process.env.NODE_ENV === 'test') {
+    req.user = { email: 'testuser@gmail.com' };
+    return next();
+  }
   if (req.isAuthenticated()) { return next(); }
   log.info({ fnct: 'ensureAuthenticated' }, 'REROUTE Login');
   return res.redirect('/login');
