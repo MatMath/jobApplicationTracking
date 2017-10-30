@@ -28,9 +28,11 @@ router.get('/', (req, res) => {
   });
 });
 router.post('/', (req, res, next) => {
-  if (!req.body || Object.keys(req.body).length === 0) { return next(Boom.badRequest('Missing data')); }
-  return Joi.validate(req.body, companySchema)
-    .then(() => db.collection(cie).save(req.body, (err) => {
+  const cieData = req.body;
+  if (!cieData || Object.keys(cieData).length === 0) { return next(Boom.badRequest('Missing data')); }
+  cieData.email = req.user.email;
+  return Joi.validate(cieData, companySchema)
+    .then(() => db.collection(cie).save(cieData, (err) => {
       if (err) return log.warn({ fnct: 'Push New Company', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push company' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
@@ -41,6 +43,7 @@ router.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
   const tmp = { ...req.body, _id: ObjectID(_id) };
+  tmp.email = req.user.email;
   return Joi.validate(req.body, companySchema)
     .then(() => db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
       if (err) {

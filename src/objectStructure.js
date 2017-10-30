@@ -14,6 +14,7 @@ const company = {
 
 const companySchema = {
   _id: Joi.objectId(),
+  email: Joi.string().required(),
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: {
@@ -31,6 +32,7 @@ const recruitersInfo = {
 
 const recruitersInfoSchema = {
   _id: Joi.objectId(),
+  email: Joi.string().required(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
 };
@@ -54,6 +56,7 @@ const meetingInfoSchema = {
 const applicationType = ['Recruiters', 'Direct'];
 
 const globalStructure = {
+  email: undefined,
   location: undefined,
   website: undefined,
   applicationType: undefined,
@@ -71,6 +74,7 @@ const globalStructure = {
 
 const globalStructureSchema = {
   _id: Joi.objectId(),
+  email: Joi.string().required(),
   location: Joi.string().required(),
   website: Joi.string().allow(''),
   applicationType: Joi.string().allow(''),

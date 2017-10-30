@@ -29,9 +29,11 @@ router.get('/', (req, res) => {
   });
 });
 router.post('/', (req, res, next) => {
-  if (!req.body || Object.keys(req.body).length === 0) { return next(Boom.badRequest('Missing data')); }
-  return Joi.validate(req.body, recruitersInfoSchema)
-    .then(() => db.collection(recruiters).save(req.body, (err) => {
+  const bodyData = req.body;
+  if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
+  bodyData.email = req.user.email;
+  return Joi.validate(bodyData, recruitersInfoSchema)
+    .then(() => db.collection(recruiters).save(bodyData, (err) => {
       if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
@@ -42,6 +44,7 @@ router.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
   const tmp = { ...req.body, _id: ObjectID(_id) };
+  tmp.email = req.user.email;
   return Joi.validate(req.body, recruitersInfoSchema)
     .then(() => db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
       if (err) {
