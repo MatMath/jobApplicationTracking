@@ -72,7 +72,6 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static(uiFile));
 
 app.get('/login', (req, res) => {
   res.render('login', { user: req.user });
@@ -90,6 +89,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 app.use(ensureAuthenticated); // Everything after is Locked
+app.use(express.static(uiFile));
 // Get info
 app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));
 app.get('/log', (req, res) => res.json(getBunyanLog('info')));
@@ -100,10 +100,9 @@ app.use('/cie', cieHandler);
 app.use('/list', listHandler);
 app.use('/recruiters', recruitersHandler);
 
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile(uiFile);
 });
-app.use(express.static(path.join(__dirname, '/public')));
 
 // Catch if no route match.
 app.use(routeNotFound); // Should never reach here since the Front-end should catch it. ???

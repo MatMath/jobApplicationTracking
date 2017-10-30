@@ -30,7 +30,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  db.collection(job).find().toArray((err, results) => {
+  db.collection(job).find({ email: req.user.email }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
