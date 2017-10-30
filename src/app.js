@@ -26,7 +26,12 @@ const recruitersHandler = require('./recruitersHandler');
 const { convertDataStructure, writeUserToDB } = require('./userHandler');
 
 // Vars:
-const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, cookie_secret } = require('../config.json');
+const {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  cookie_secret,
+  callbackURL,
+} = require('../config.json');
 
 const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.
@@ -47,7 +52,7 @@ passport.use(new GoogleStrategy(
   {
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:3001/auth/google/callback',
+    callbackURL,
     passReqToCallback: true,
   },
   (request, accessToken, refreshToken, profile, done) => {
