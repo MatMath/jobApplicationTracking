@@ -5,8 +5,14 @@ const company = {
   name: undefined,
   location: undefined,
   gps: {
-    type: undefined,
-    coordinates: [0, 0],
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [125, 10],
+    },
+    properties: {
+      name: 'Dinagat Islands',
+    },
   },
   contact: undefined,
   link: undefined,
@@ -18,8 +24,14 @@ const companySchema = {
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: {
-    type: Joi.string().allow(''),
-    coordinates: Joi.array().length(2),
+    type: Joi.string(),
+    geometry: {
+      type: Joi.string(),
+      coordinates: Joi.array().items(Joi.number()),
+    },
+    properties: {
+      name: Joi.string(),
+    },
   },
   contact: Joi.string().allow(''),
   link: Joi.string().allow(''),
