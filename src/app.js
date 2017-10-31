@@ -82,7 +82,7 @@ app.get('/login', (req, res) => {
   res.render('login', { user: req.user });
 });
 app.get('/auth/google', passport.authenticate('google', {
-  scope: ['https://www.googleapis.com/auth/plus.login', 'https://www.googleapis.com/auth/plus.profile.emails.read'],
+  scope: ['https://www.googleapis.com/auth/plus.profile.emails.read'],
 }));
 app.get('/auth/google/callback', passport.authenticate('google', {
   successRedirect: '/',
