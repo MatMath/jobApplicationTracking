@@ -33,8 +33,8 @@ const companySchema = {
       name: Joi.string(),
     },
   },
-  contact: Joi.string().allow(''),
-  link: Joi.string().allow(''),
+  contact: Joi.string().allow('').allow(null),
+  link: Joi.string().allow('').allow(null),
 };
 
 const recruitersInfo = {
@@ -61,8 +61,8 @@ const meetingInfoSchema = {
   date: Joi.number().required(),
   participants: Joi.array(),
   purpose: Joi.string().required(),
-  challenge: Joi.string().allow(''),
-  notes: Joi.string().allow(''),
+  challenge: Joi.string().allow('').allow(null),
+  notes: Joi.string().allow('').allow(null),
 };
 
 const applicationType = ['Recruiters', 'Direct'];
@@ -88,18 +88,18 @@ const globalStructureSchema = {
   _id: Joi.objectId(),
   email: Joi.string().required(),
   location: Joi.string().required(),
-  website: Joi.string().allow(''),
-  applicationType: Joi.string().allow(''),
-  recruiters: Joi.string().allow(''),
+  website: Joi.string().allow('').allow(null),
+  applicationType: Joi.string().allow('').allow(null),
+  recruiters: Joi.string().allow('').allow(null),
   company: Joi.string().required(),
   title: Joi.string().required(),
-  description: Joi.string().allow(''),
+  description: Joi.string().allow('').allow(null),
   date: Joi.date(),
   application: Joi.boolean(),
   answer_receive: Joi.boolean(),
   meeting: Joi.array(),
-  notes: Joi.string().allow(''),
-  cover_letter: Joi.string().allow(''),
+  notes: Joi.string().allow('').allow(null),
+  cover_letter: Joi.string().allow('').allow(null),
 };
 
 const dbName = {
