@@ -7,17 +7,15 @@ let db = getDbHandle();
 
 const convertDataStructure = (user) => {
   // eslint-disable-next-line object-curly-newline
-  const { provider, displayName, placesLived, language, email, gender } = user;
+  const { provider, displayName, email, gender } = user;
+  // eslint-disable-next-line object-curly-newline
+  return { provider, displayName, email, gender };
   // const tmp = {
   //   provider: 'google',
   //   displayName: 'Math Leg',
-  //   placesLived: [ { value: 'Montreal, Qc, Canada', primary: true } ],
-  //   language: 'en',
   //   email: 'my.email@gmail.com',
   //   gender: 'male'
   // }
-  // eslint-disable-next-line object-curly-newline
-  return { provider, displayName, placesLived, language, email, gender };
 };
 
 const writeUserToDB = (user) => {
