@@ -40,6 +40,7 @@ const companySchema = {
 const recruitersInfo = {
   cie: undefined,
   name: undefined,
+  notes: undefined,
 };
 
 const recruitersInfoSchema = {
@@ -47,6 +48,7 @@ const recruitersInfoSchema = {
   email: Joi.string().required(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
+  notes: Joi.string().allow('').allow(null),
 };
 
 const meetingInfo = {
