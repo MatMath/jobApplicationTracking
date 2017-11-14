@@ -84,6 +84,8 @@ const globalStructure = {
   meeting: [],
   notes: undefined,
   cover_letter: undefined,
+  offer: false,
+  acceptedOffer: undefined,
 };
 
 const globalStructureSchema = {
@@ -102,6 +104,8 @@ const globalStructureSchema = {
   meeting: Joi.array(),
   notes: Joi.string().allow('').allow(null),
   cover_letter: Joi.string().allow('').allow(null),
+  offer: Joi.boolean(),
+  acceptedOffer: Joi.boolean(),
 };
 
 const dbName = {
