@@ -84,7 +84,7 @@ const globalStructure = {
   meeting: [],
   notes: undefined,
   cover_letter: undefined,
-  offer: false,
+  offer: undefined,
   acceptedOffer: undefined,
 };
 
@@ -104,7 +104,7 @@ const globalStructureSchema = {
   meeting: Joi.array(),
   notes: Joi.string().allow('').allow(null),
   cover_letter: Joi.string().allow('').allow(null),
-  offer: Joi.boolean(),
+  offer: Joi.string().allow('', 'Yes', 'No', 'Rejected').allow(null),
   acceptedOffer: Joi.boolean(),
 };
 
