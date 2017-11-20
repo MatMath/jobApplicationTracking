@@ -23,6 +23,7 @@ const {
 const cieHandler = require('./cieHandler');
 const listHandler = require('./listHandler');
 const recruitersHandler = require('./recruitersHandler');
+const analyticHandler = require('./analyticHandler');
 const { convertDataStructure, writeUserToDB } = require('./userHandler');
 
 // Vars:
@@ -104,6 +105,7 @@ app.get('/json/basicparam', (req, res) => {
 app.use('/json/cie', cieHandler);
 app.use('/json/list', listHandler);
 app.use('/json/recruiters', recruitersHandler);
+app.use('/json/analytic', analyticHandler);
 
 app.get('/*', (req, res) => {
   res.sendFile(uiFile);

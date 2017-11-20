@@ -23,16 +23,9 @@ Option on the DB:
 - CRUD new Recruiters
 - CRUD new listing
 
-Query:
-todo - Extract Cie Gps?
-
 ## Todo:
 - (See issue)
-- Link Cie & Recruiters to New posting
 - Deployment script
-- Front-end to retrieve / input data.
-- Passport security?
-- Optimisation: Find how to use a link to link Cie & Recruiters list to the Listing.
 
 ## Deployment
 TODO -> CircleCI -> Docker -> AWS ?
