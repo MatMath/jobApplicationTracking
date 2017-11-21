@@ -24,6 +24,7 @@ const cieHandler = require('./cieHandler');
 const listHandler = require('./listHandler');
 const recruitersHandler = require('./recruitersHandler');
 const analyticHandler = require('./analyticHandler');
+const paramHandler = require('./paramHandler');
 const { convertDataStructure, writeUserToDB } = require('./userHandler');
 
 // Vars:
@@ -100,8 +101,10 @@ app.use(express.static(uiFile));
 app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));
 app.get('/log', (req, res) => res.json(getBunyanLog('info')));
 app.get('/json/basicparam', (req, res) => {
+  // Empty object, Still ????
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
+app.get('/json/param', paramHandler);
 app.use('/json/cie', cieHandler);
 app.use('/json/list', listHandler);
 app.use('/json/recruiters', recruitersHandler);
