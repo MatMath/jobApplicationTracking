@@ -50,4 +50,22 @@ router.get('/website', (req, res) => {
   });
 });
 
+router.get('/title', (req, res) => {
+  db.collection(job).aggregate([
+    {
+      $match: {
+        application: true,
+        email: req.user.email,
+      },
+    },
+    {
+      $group: {
+        _id: '$title',
+        count: { $sum: 1 },
+      },
+    }], (err, result) => {
+    res.json(result);
+  });
+});
+
 module.exports = router;
