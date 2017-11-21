@@ -24,13 +24,28 @@ router.use((req, res, next) => {
 });
 
 router.get('/website', (req, res) => {
-  db.collection(job).aggregate([{
-    $group: {
-      _id: '$website',
-      count: { $sum: 1 },
+  db.collection(job).aggregate([
+    {
+      $match: {
+        application: true,
+        email: req.user.email,
+      },
     },
-  }], (err, result) => {
-    console.log(result, err);
+    {
+      $project: {
+        item: '$website',
+        answer_receive: {
+          $cond: ['$answer_receive', 1, 0],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$item',
+        count: { $sum: 1 },
+        answer_receive: { $sum: '$answer_receive' },
+      },
+    }], (err, result) => {
     res.json(result);
   });
 });

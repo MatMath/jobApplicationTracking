@@ -18,21 +18,23 @@ const company = {
   link: undefined,
 };
 
+const gpsSchema = {
+  type: Joi.string(),
+  geometry: {
+    type: Joi.string(),
+    coordinates: Joi.array().items(Joi.number()),
+  },
+  properties: {
+    name: Joi.string(),
+  },
+};
+
 const companySchema = {
   _id: Joi.objectId(),
   email: Joi.string().required(),
   name: Joi.string().required(),
   location: Joi.string().required(),
-  gps: {
-    type: Joi.string(),
-    geometry: {
-      type: Joi.string(),
-      coordinates: Joi.array().items(Joi.number()),
-    },
-    properties: {
-      name: Joi.string(),
-    },
-  },
+  gps: gpsSchema,
   contact: Joi.string().allow('').allow(null),
   link: Joi.string().allow('').allow(null),
 };
@@ -108,6 +110,13 @@ const globalStructureSchema = {
   acceptedOffer: Joi.boolean(),
 };
 
+// Extract Website list (indeed, linkedIn, etc) & Count of each & number of feedback receive.
+const websiteInfoSchema = {
+  website: Joi.string(),
+  count: Joi.number(),
+  feedback: Joi.number(),
+};
+
 const dbName = {
   cie: 'company',
   job: 'jobapplication',
@@ -125,5 +134,7 @@ module.exports = {
   recruitersInfoSchema,
   company,
   companySchema,
+  gpsSchema,
+  websiteInfoSchema,
   dbName,
 };
