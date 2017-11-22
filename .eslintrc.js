@@ -16,6 +16,7 @@ module.exports = {
         "code": 200,
         "ignoreComments": true,
         "ignoreTrailingComments": true
-      }]
+      }],
+      "no-underscore-dangle": 0
     }
 };

@@ -104,7 +104,7 @@ app.get('/json/basicparam', (req, res) => {
   // Empty object, Still ????
   res.json({ emptyObject: globalStructure, meetingInfo, applicationType });
 });
-app.get('/json/param', paramHandler);
+app.use('/json/param', paramHandler);
 app.use('/json/cie', cieHandler);
 app.use('/json/list', listHandler);
 app.use('/json/recruiters', recruitersHandler);
