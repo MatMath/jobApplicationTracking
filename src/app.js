@@ -4,6 +4,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const cookieParser = require('cookie-parser');
 // Tmp until I understand and then store it in Mongo Directly
@@ -46,11 +47,10 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((obj, done) => {
-  // TODO: ????
   done(null, obj);
 });
 
-passport.use(new GoogleStrategy(
+passport.use('google', new GoogleStrategy(
   {
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
@@ -58,10 +58,19 @@ passport.use(new GoogleStrategy(
     passReqToCallback: true,
   },
   (request, accessToken, refreshToken, profile, done) => {
-    // TODO: Add a DB Call/Extraction to get the proper USER DB(ish)
     process.nextTick(() => done(null, profile));
   },
 ));
+
+passport.use('local', new LocalStrategy((username, password, done) => {
+  const user = {
+    provider: 'local-login',
+    displayName: 'Demo User',
+    email: 'demouser@example.com',
+    gender: 'unknown',
+  };
+  return done(null, user);
+}));
 
 // configure Express
 log.info({ fnct: 'App' }, 'Starting the App.js file');
@@ -90,6 +99,9 @@ app.get('/auth/google/callback', passport.authenticate('google', {
   successRedirect: '/',
   failureRedirect: '/login',
 }));
+app.post('/auth/demo', passport.authenticate('local', { failureRedirect: '/login' }), (req, res) => {
+  res.redirect('/');
+});
 
 app.get('/logout', (req, res) => {
   req.logout();

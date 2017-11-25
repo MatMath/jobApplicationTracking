@@ -26,7 +26,8 @@
     "joi-objectid": "^2.0.0",
     "mongodb": "^2.2.31",
     "passport": "^0.4.0",
-    "passport-google-oauth2": "^0.1.6"
+    "passport-google-oauth2": "^0.1.6",
+    "passport-local": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^4.8.0",
