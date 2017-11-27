@@ -35,7 +35,12 @@ router.get('/', (req, res) => {
     return res.json(results);
   });
 });
-
+router.use((req, res, next) => {
+  if (req.user.email === 'demouser@example.com') {
+    return res.json({ status: 'Demo user' });
+  }
+  return next();
+});
 router.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }

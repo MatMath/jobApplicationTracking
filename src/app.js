@@ -105,7 +105,7 @@ app.post('/auth/demo', passport.authenticate('local', { failureRedirect: '/login
 
 app.get('/logout', (req, res) => {
   req.logout();
-  res.redirect('/');
+  res.redirect('/login');
 });
 app.use(ensureAuthenticated); // Everything after is Locked
 app.use(express.static(uiFile));
