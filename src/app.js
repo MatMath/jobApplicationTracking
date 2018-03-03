@@ -140,6 +140,10 @@ function ensureAuthenticated(req, res, next) {
     req.user = { email: 'testuser@gmail.com' };
     return next();
   }
+  if (process.env.NODE_ENV === 'dev' && process.env.USER_EMAIL) {
+    req.user = { email: process.env.USER_EMAIL };
+    return next();
+  }
   if (req.isAuthenticated()) { return next(); }
   log.info({ fnct: 'ensureAuthenticated' }, 'REROUTE Login');
   return res.redirect('/login');

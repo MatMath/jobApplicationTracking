@@ -9,7 +9,9 @@ Install MongoDB Atlas (DB as a service) Or you can also install it locally.
 - $ cp config.sample.json config.json -> Update the Mongo URL to your config.json
 - $ npm install
 - $ npm start
-Now the server is running.
+Now the server is running & serving the login page & dist folder when Authenticated (angular App)
+To run the server & the Angular App separately (without building/copying every time)
+- $ USER_EMAIL=wonderful.person.email@gmail.com npm run start-dev; // Add your email that have value in the DB.
 
 ## Running the tests
 $ npm test
