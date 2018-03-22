@@ -78,7 +78,10 @@ router.get('/successrate', (req, res) => {
     {
       $group: {
         _id: '$website',
-        count: { $sum: 1 },
+        total: { $sum: 1 },
+        success: {
+          $sum: { $cond: ['$answer_receive', 1, 0] },
+        },
       },
     }], (err, result) => {
     res.json(result);
