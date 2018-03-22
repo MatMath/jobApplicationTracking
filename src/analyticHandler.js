@@ -68,4 +68,21 @@ router.get('/title', (req, res) => {
   });
 });
 
+router.get('/successrate', (req, res) => {
+  db.collection(job).aggregate([
+    {
+      $match: {
+        email: req.user.email,
+      },
+    },
+    {
+      $group: {
+        _id: '$website',
+        count: { $sum: 1 },
+      },
+    }], (err, result) => {
+    res.json(result);
+  });
+});
+
 module.exports = router;
