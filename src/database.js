@@ -5,17 +5,17 @@ const { MongoClient, MongoError } = require('mongodb');
 const config = require('../config.json');
 const { log } = require('./logs');
 
-const uri = config.mongourl;
+const { mongourl, mongoDBName } = config;
 let dbName;
 
 const dBconnect = () => new Promise((resolve, reject) => {
-  MongoClient.connect(uri, (error, databaseHandle) => {
+  MongoClient.connect(mongourl, (error, databaseHandle) => {
     if (error) {
       log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
       reject(process.exit(1));
     }
-    dbName = databaseHandle;
-    resolve(databaseHandle);
+    dbName = databaseHandle.db(mongoDBName);
+    resolve(dbName);
   });
 });
 
