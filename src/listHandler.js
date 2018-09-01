@@ -60,7 +60,7 @@ router.put('/', (req, res, next) => {
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
   // I cannot use tmp because it complain about _id that it need to be a string.
   return Joi.validate({ ...req.body, email: tmp.email }, globalStructureSchema)
-    .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(_id) }, tmp, (err) => {
+    .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Job', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));

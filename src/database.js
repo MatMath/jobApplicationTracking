@@ -14,7 +14,7 @@ const dBconnect = () => new Promise((resolve, reject) => {
       log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
       reject(process.exit(1));
     }
-    dbName = databaseHandle.db(mongoDBName);
+    dbName = databaseHandle.db(mongoDBName, { useNewUrlParser: true });
     resolve(dbName);
   });
 });
