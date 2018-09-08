@@ -8,16 +8,17 @@ const { log } = require('./logs');
 const { mongourl, mongoDBName } = config;
 let dbName;
 
-const dBconnect = () => new Promise((resolve, reject) => {
-  MongoClient.connect(mongourl, (error, databaseHandle) => {
-    if (error) {
-      log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
-      reject(process.exit(1));
-    }
-    dbName = databaseHandle.db(mongoDBName, { useNewUrlParser: true });
-    resolve(dbName);
-  });
-});
+const dBconnect = async () => {
+  let client;
+  try {
+    client = await MongoClient.connect(mongourl, { useNewUrlParser: true });
+    dbName = client.db(mongoDBName);
+    return dbName;
+  } catch (error) {
+    log.warn({ fnct: 'MongoClient', error }, 'Err Connecting to Mongo');
+    return process.exit(1);
+  }
+};
 
 const handleDatabaseError = (error, req, res, next) => {
   if (error instanceof MongoError) {
