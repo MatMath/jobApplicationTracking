@@ -24,68 +24,68 @@ router.use((req, res, next) => {
 });
 
 router.get('/website', (req, res) => {
-  db.collection(job).aggregate([
-    {
-      $match: {
-        application: true,
-        email: req.user.email,
-      },
-    },
-    {
-      $project: {
-        item: '$website',
-        answer_receive: {
-          $cond: ['$answer_receive', 1, 0],
+  db.collection(job)
+    .aggregate([
+      {
+        $match: {
+          application: true,
+          email: req.user.email,
         },
       },
-    },
-    {
-      $group: {
-        _id: '$item',
-        count: { $sum: 1 },
-        answer_receive: { $sum: '$answer_receive' },
+      {
+        $project: {
+          item: '$website',
+          answer_receive: {
+            $cond: ['$answer_receive', 1, 0],
+          },
+        },
       },
-    }], (err, result) => {
-    res.json(result);
-  });
+      {
+        $group: {
+          _id: '$item',
+          count: { $sum: 1 },
+          answer_receive: { $sum: '$answer_receive' },
+        },
+      }])
+    .toArray((err, docs) => res.json(docs));
 });
 
 router.get('/title', (req, res) => {
-  db.collection(job).aggregate([
-    {
-      $match: {
-        application: true,
-        email: req.user.email,
+  db.collection(job)
+    .aggregate([
+      {
+        $match: {
+          application: true,
+          email: req.user.email,
+        },
       },
-    },
-    {
-      $group: {
-        _id: '$title',
-        count: { $sum: 1 },
-      },
-    }], (err, result) => {
-    res.json(result);
-  });
+      {
+        $group: {
+          _id: '$title',
+          count: { $sum: 1 },
+        },
+      }])
+    .toArray((err, result) => res.json(result));
 });
 
 router.get('/successrate', (req, res) => {
-  db.collection(job).aggregate([
-    {
-      $match: {
-        email: req.user.email,
-      },
-    },
-    {
-      $group: {
-        _id: '$website',
-        total: { $sum: 1 },
-        success: {
-          $sum: { $cond: ['$answer_receive', 1, 0] },
+  db.collection(job)
+    .aggregate([
+      {
+        $match: {
+          email: req.user.email,
         },
       },
-    }], (err, result) => {
-    res.json(result);
-  });
+      {
+        $group: {
+          _id: '$website',
+          total: { $sum: 1 },
+          success: {
+            $sum: { $cond: ['$answer_receive', 1, 0] },
+          },
+        },
+      }])
+    .toArray((err, result) => res.json(result));
 });
 
 module.exports = router;
