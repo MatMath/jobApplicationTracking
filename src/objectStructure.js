@@ -112,9 +112,9 @@ const globalStructureSchema = {
 
 // Extract Website list (indeed, linkedIn, etc) & Count of each & number of feedback receive.
 const websiteInfoSchema = {
-  website: Joi.string(),
+  _id: Joi.string(),
   count: Joi.number(),
-  feedback: Joi.number(),
+  answer_receive: Joi.number(),
 };
 
 const dbName = {

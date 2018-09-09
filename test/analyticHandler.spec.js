@@ -21,7 +21,7 @@ const titleLoc = {
 };
 
 
-describe.only('Testing the Analytics', () => {
+describe('Testing the Analytics', () => {
   before((done) => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
@@ -37,7 +37,8 @@ describe.only('Testing the Analytics', () => {
     server.close();
   });
 
-  describe('.website flow', () => {
+  describe('.website flow', function bob() {
+    this.timeout(20000);
     // Delete all pending Jobs.
     it('delete all testing job to clean the DB', (done) => {
       // Delete info
@@ -53,30 +54,45 @@ describe.only('Testing the Analytics', () => {
       const newApplication = {
         ...globalStructure,
         ...titleLoc,
+        application: true,
+        answer_receive: true,
         company: 'Annoying',
         website: 'linkedIn',
         recruiters: 'spamming bot',
         title: 'FullStack',
       };
-      let tmp = [1, 2, 3, 4].map(() => newApplication);
+      let tmp = [true, true, false, false].map((test) => {
+        return { ...newApplication, answer_receive: test };
+      });
       tmp = [...tmp, { ...newApplication, website: 'Zip', title: 'Front-end' }];
       Promise.all(tmp.map(job => request.post(`${url}/list`, { json: job }))) // Adding 4 linkedIn & 1 Zip.
         .then((all) => {
-          expect(all.length).to.be(5);
+          expect(all).to.have.length(5);
           done();
         });
     });
 
     // test the aggregation.
     it('Validate the website list structure', (done) => {
-      request.get(`${analyticUrl}/website`, (error, response, body) => {
-        console.log(error, body);
-        expect(error).to.be(null);
-        expect(response.statusCode).to.be(200);
-        const data = JSON.parse(body);
-        expect(data.length).to.not.be(0);
-        Joi.validate(data[0], websiteInfoSchema).then(done);
-      });
+      setTimeout(() => {
+        request.get(`${analyticUrl}/website`, (error, response, body) => {
+          console.log('ERR-BODY:', error, body);
+          expect(error).to.be(null);
+          expect(response.statusCode).to.be(200);
+          const data = JSON.parse(body);
+          expect(data).to.have.length(2);
+
+          const zipObj = data.filter(a => a._id === 'Zip')[0]; // Cannot make Contain work for some reason :/
+          expect(zipObj.count).to.be(1);
+          expect(zipObj.answer_receive).to.be(1);
+
+          const linkObj = data.filter(a => a._id === 'linkedIn')[0];
+          expect(linkObj.count).to.be(4);
+          expect(linkObj.answer_receive).to.be(2);
+
+          Joi.validate(data[0], websiteInfoSchema).then(() => { done(); });
+        });
+      }, 2000); // Somehow the Promise.all take time to save to the DB and return a Ack and not a confirmation. (cue)
     });
   });
 
