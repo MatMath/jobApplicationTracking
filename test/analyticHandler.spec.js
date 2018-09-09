@@ -26,12 +26,11 @@ describe('Testing the Analytics', () => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
-    app.dBconnect().then(() => {
-      server = app.listen(port, () => {
-        console.log(`Express server listening on port ${server.address().port}`);
-        done();
-      });
-    });
+    app.dBconnect()
+      .then(() => new Promise((resolve) => {
+        server = app.listen(port, resolve);
+      }))
+      .then(done);
   });
   after(() => {
     server.close();
@@ -61,9 +60,7 @@ describe('Testing the Analytics', () => {
         recruiters: 'spamming bot',
         title: 'FullStack',
       };
-      let tmp = [true, true, false, false].map((test) => {
-        return { ...newApplication, answer_receive: test };
-      });
+      let tmp = [true, true, false, false].map((test) => { return { ...newApplication, answer_receive: test }; }); // eslint-disable-line arrow-body-style
       tmp = [...tmp, { ...newApplication, website: 'Zip', title: 'Front-end' }];
       Promise.all(tmp.map(job => request.post(`${url}/list`, { json: job }))) // Adding 4 linkedIn & 1 Zip.
         .then((all) => {
@@ -76,7 +73,6 @@ describe('Testing the Analytics', () => {
     it('Validate the website list structure', (done) => {
       setTimeout(() => {
         request.get(`${analyticUrl}/website`, (error, response, body) => {
-          console.log('ERR-BODY:', error, body);
           expect(error).to.be(null);
           expect(response.statusCode).to.be(200);
           const data = JSON.parse(body);

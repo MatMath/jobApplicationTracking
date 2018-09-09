@@ -32,12 +32,11 @@ describe('Testing the flow', function bob() {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
-    app.dBconnect().then(() => {
-      server = app.listen(port, () => {
-        console.log(`Express server listening on port ${server.address().port}`);
-        done();
-      });
-    });
+    app.dBconnect()
+      .then(() => new Promise((resolve) => {
+        server = app.listen(port, resolve);
+      }))
+      .then(done);
   });
   after(() => {
     server.close();
