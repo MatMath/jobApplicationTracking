@@ -29,6 +29,11 @@ const gpsSchema = {
   },
 };
 
+const analyticTitleSchema = {
+  _id: Joi.string(),
+  count: Joi.number(),
+};
+
 const companySchema = {
   _id: Joi.objectId(),
   email: Joi.string().required(),
@@ -125,6 +130,7 @@ const dbName = {
 };
 
 module.exports = {
+  analyticTitleSchema,
   globalStructure,
   globalStructureSchema,
   meetingInfo,

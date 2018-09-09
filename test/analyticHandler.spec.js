@@ -8,6 +8,7 @@ const url = `http://localhost:${port}/json`;
 const analyticUrl = `${url}/analytic`;
 const app = require('../src/app');
 const {
+  analyticTitleSchema,
   globalStructure,
   gpsSchema,
   websiteInfoSchema,
@@ -36,7 +37,7 @@ describe('Testing the Analytics', () => {
     server.close();
   });
 
-  describe('.website flow', function bob() {
+  describe('.analytic flow', function bob() {
     this.timeout(20000);
     // Delete all pending Jobs.
     it('delete all testing job to clean the DB', (done) => {
@@ -70,7 +71,7 @@ describe('Testing the Analytics', () => {
     });
 
     // test the aggregation.
-    it('Validate the website list structure', (done) => {
+    it('.website list structure', (done) => {
       setTimeout(() => {
         request.get(`${analyticUrl}/website`, (error, response, body) => {
           expect(error).to.be(null);
@@ -89,6 +90,21 @@ describe('Testing the Analytics', () => {
           Joi.validate(data[0], websiteInfoSchema).then(() => { done(); });
         });
       }, 2000); // Somehow the Promise.all take time to save to the DB and return a Ack and not a confirmation. (cue)
+    });
+
+    it('.title', (done) => {
+      request.get(`${analyticUrl}/title`, (error, response, body) => {
+        const data = JSON.parse(body);
+        expect(data).to.have.length(2);
+
+        const fullStackObj = data.filter(a => a._id === 'FullStack')[0];
+        expect(fullStackObj.count).to.be(4);
+
+        const fEndObj = data.filter(a => a._id === 'Front-end')[0];
+        expect(fEndObj.count).to.be(1);
+
+        Joi.validate(data[0], analyticTitleSchema).then(() => { done(); });
+      });
     });
   });
 
