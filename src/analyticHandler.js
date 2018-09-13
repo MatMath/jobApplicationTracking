@@ -33,18 +33,12 @@ router.get('/website', (req, res) => {
         },
       },
       {
-        $project: {
-          item: '$website',
-          answer_receive: {
-            $cond: ['$answer_receive', 1, 0],
-          },
-        },
-      },
-      {
         $group: {
-          _id: '$item',
+          _id: '$website',
           count: { $sum: 1 },
-          answer_receive: { $sum: '$answer_receive' },
+          answer_receive: {
+            $sum: { $cond: ['$answer_receive', 1, 0] },
+          },
         },
       }])
     .toArray((err, docs) => res.json(docs));
@@ -63,26 +57,6 @@ router.get('/title', (req, res) => {
         $group: {
           _id: '$title',
           count: { $sum: 1 },
-        },
-      }])
-    .toArray((err, result) => res.json(result));
-});
-
-router.get('/successrate', (req, res) => {
-  db.collection(job)
-    .aggregate([
-      {
-        $match: {
-          email: req.user.email,
-        },
-      },
-      {
-        $group: {
-          _id: '$website',
-          total: { $sum: 1 },
-          success: {
-            $sum: { $cond: ['$answer_receive', 1, 0] },
-          },
         },
       }])
     .toArray((err, result) => res.json(result));
