@@ -2,6 +2,17 @@
 
 Job application tracking can get tedious with applying on different websites, different company, location, and many recruiters that all propose something... So instead of putting everything in a Excel file I wanted to regroup everything.
 
+### Tech Stack
+##### BE (this repo):
+- Auth with Passport (google-oauth2 & Local)
+- Node/Express API
+- MongoDB
+
+##### (FE)[https://github.com/MatMath/jobApplicationTrackingUI]:
+- Angular
+- Bootstrap
+- Rickshaw (for simple graph)
+
 ### Prerequisites
 Install MongoDB Atlas (DB as a service) Or you can also install it locally.
 
