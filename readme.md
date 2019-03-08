@@ -39,6 +39,7 @@ Option on the DB:
 ## Todo:
 - (See issue)
 - Deployment script
+- Init script to setup the DB structure.
 
 ## Deployment
 TODO -> CircleCI -> Docker -> AWS ?
