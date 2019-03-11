@@ -42,4 +42,37 @@ Option on the DB:
 - Init script to setup the DB structure.
 
 ## Deployment
-TODO -> CircleCI -> Docker -> AWS ?
+
+### EC2
+
+Spin up a new micro instance, associate an elastic IP address to it. Setup a security group with ports 22 (ssh), 80, 443 (tcp).
+
+Install nginx, and confirm that your nginx is up and running on port 80 by going to your IP address http://11.11.11.11:80.
+
+### DNS
+
+To begin, you will need a domain name that you own. Add an "A record" for your domain name, which points to your elastic IP address. Wait for it to resolve (15 min to 24 hours). Confirm that your dns is up and running by going to your domain name http://yourdomain.com, you should see the same nginx placeholder as you did in the above step.
+
+### HTTPS
+
+Once your domain name resolves, install certbot on your EC2 instance. Confirm that your nginx is up and running on port 443 and you have a trusted certificate, by going to your https domain name https://yourdomain.com
+(Certbot)[https://certbot.eff.org/lets-encrypt/ubuntubionic-nginx]
+Certbot renew notes: Your cert will expire on 2019-06-07. To obtain a new or tweaked version of this certificate in the future, simply run certbot again with the "certonly" option. To non-interactively renew *all* of your certificates, run "certbot renew"
+
+
+
+### Web service
+
+
+locashost certificate for SSL…
+openssl req -x509 -out localhost.crt -keyout localhost.key -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -extensions EXT -config <( printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+
+
+On the server export `NODE_ENV=production`, this will indicate to express and other libraries that they are running in production mode and should log less and handle errors differently. The service also uses this to detect that it is running behind an nginx proxy, so it will run on http.
+
+### Nginx Proxy
+
+After your webservice is up and running, edit your nginx config to proxy_pass to your webservice. (see wiki)[https://www.nginx.com/resources/wiki/start/topics/examples/full/]
+location {
+  proxy_pass  http://127.0.0.1:8080;
+}
