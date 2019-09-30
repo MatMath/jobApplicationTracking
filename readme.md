@@ -14,7 +14,31 @@ Job application tracking can get tedious with applying on different websites, di
 - Rickshaw (for simple graph)
 
 ### Prerequisites
+#### MongoDB:
 Install MongoDB Atlas (DB as a service) Or you can also install it locally.
+Collection needed inside the DB:
+- JobTracking (or any DB name)
+  - company
+  - jobapplication 
+  - recruiters
+  - user
+
+If you run it locally, Install `mongo` command line interface:
+- `$ mongo`
+
+Inside `mongo` command line interface
+- `$ use jobTracking`
+
+Create all collection:
+- `$ db.company.insertOne({});`
+- `$ db.jobapplication.insertOne({})`;
+- `$ db.recruiters.insertOne({});`
+- `$ db.user.insertOne({});`
+
+Or use the Compass UI to create each collection manually.
+
+#### SSH Certificate locally:
+(some info here)[https://flaviocopes.com/express-https-self-signed-certificate/]
 
 ### Getting Started
 - $ cp config.sample.json config.json -> Update the Mongo URL to your config.json
@@ -22,10 +46,10 @@ Install MongoDB Atlas (DB as a service) Or you can also install it locally.
 - $ npm start
 Now the server is running & serving the login page & dist folder when Authenticated (angular App)
 To run the server & the Angular App separately (without building/copying every time)
-- $ USER_EMAIL=wonderful.person.email@gmail.com npm run start-dev; // Add your email that have value in the DB.
+- `$ USER_EMAIL=wonderful.person.email@gmail.com npm run start-dev`; // Add your email that have value in the DB.
 
 ## Running the tests
-$ npm test
+`$ npm test`
 
 ### Flow:
 Login via passport -> Get the Data -> Store user data into a User Container of MongoDB.
