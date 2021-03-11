@@ -12,7 +12,7 @@ const {
   globalStructure,
   gpsSchema,
   websiteInfoSchema,
-} = require('../src/objectStructure');
+} = require('../src/data/joiSchema');
 
 let server;
 

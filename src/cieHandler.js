@@ -7,7 +7,8 @@ const { ObjectID } = require('mongodb');
 // costum import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
-const { dbName, companySchema } = require('./objectStructure');
+const { dbName } = require('./data/fixtureData');
+const { companySchema } = require('./data/joiSchema');
 
 const router = express.Router();
 let db = getDbHandle();

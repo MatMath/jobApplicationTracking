@@ -7,7 +7,7 @@ const express = require('express');
 // costum import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
-const { dbName } = require('./objectStructure');
+const { dbName } = require('./data/fixtureData');
 
 const router = express.Router();
 let db = getDbHandle();

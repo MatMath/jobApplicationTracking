@@ -18,7 +18,7 @@ const {
   globalStructure,
   meetingInfo,
   applicationType,
-} = require('./objectStructure');
+} = require('./data/joiSchema');
 
 // Routing
 const cieHandler = require('./cieHandler');

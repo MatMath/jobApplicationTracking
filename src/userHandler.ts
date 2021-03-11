@@ -1,4 +1,4 @@
-const { dbName } = require('./objectStructure');
+const { dbName } = require('./data/fixtureData');
 const { getDbHandle } = require('./database');
 const { log } = require('./logs');
 

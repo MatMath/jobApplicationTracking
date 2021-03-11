@@ -1,13 +1,14 @@
 // Global import
-const express = require('express');
-const Boom = require('boom');
-const Joi = require('joi');
-const { ObjectID } = require('mongodb');
+import express from 'express';
+import Boom from 'boom';
+import {assert} from 'joi';
+import { ObjectID } from 'mongodb';
 
 // costum import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName, recruitersInfoSchema } = require('./objectStructure');
+import { log } from '../logs';
+import { getDbHandle } from '../database';
+import { dbName } from '../data/fixtureData';
+import { recruitersInfoSchema } from '../data/joiSchema';
 
 
 const router = express.Router();
@@ -38,7 +39,7 @@ router.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
   bodyData.email = req.user.email;
-  return Joi.validate(bodyData, recruitersInfoSchema)
+  return assert(bodyData, recruitersInfoSchema)
     .then(() => db.collection(recruiters).save(bodyData, (err) => {
       if (err) return log.warn({ fnct: 'Push New Recruiters', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
@@ -51,7 +52,7 @@ router.put('/', (req, res, next) => {
   if (!_id) { return next(Boom.badRequest('Missing ID data')); }
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
   // I cannot use tmp because it complain about _id that it need to be a string.
-  return Joi.validate({ ...req.body, email: tmp.email }, recruitersInfoSchema)
+  return assert({ ...req.body, email: tmp.email }, recruitersInfoSchema)
     .then(() => db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');
