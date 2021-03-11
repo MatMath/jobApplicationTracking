@@ -4,7 +4,7 @@ const express = require('express');
 // const Joi = require('joi');
 // const { ObjectID } = require('mongodb');
 
-// costum import
+// custom import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
 const { dbName } = require('./data/fixtureData');

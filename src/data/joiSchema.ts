@@ -1,21 +1,11 @@
-const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
-import {
-  AnalyticTitle,
-  Company,
-  GlobalStructure,
-  Gps,
-  MeetingInfo,
-  RecruitersInfo,
-  WebsiteInfo
-} from './types';
+import * as Joi from 'joi';
 
-export const analyticTitleSchema: AnalyticTitle = {
+export const analyticTitleSchema = {
   _id: Joi.string(),
   count: Joi.number(),
 };
 
-export const gpsSchema: Gps = {
+export const gpsSchema = Joi.object({
   type: Joi.string(),
   geometry: {
     type: Joi.string(),
@@ -24,36 +14,36 @@ export const gpsSchema: Gps = {
   properties: {
     name: Joi.string(),
   },
-};
+});
 
-export const companySchema: Company = {
-  _id: Joi.objectId(),
+export const companySchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: gpsSchema,
   contact: Joi.string().allow('').allow(null),
   link: Joi.string().allow('').allow(null),
-};
+});
 
-export const recruitersInfoSchema: RecruitersInfo = {
-  _id: Joi.objectId(),
+export const recruitersInfoSchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
   notes: Joi.string().allow('').allow(null),
-};
+});
 
-export const meetingInfoSchema: MeetingInfo = {
+export const meetingInfoSchema = Joi.object({
   date: Joi.number().required(),
   participants: Joi.array(),
   purpose: Joi.string().required(),
   challenge: Joi.string().allow('').allow(null),
   notes: Joi.string().allow('').allow(null),
-};
+});
 
-export const globalStructureSchema:GlobalStructure = {
-  _id: Joi.objectId(),
+export const globalStructureSchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   location: Joi.string().required(),
   website: Joi.string().allow('').allow(null),
@@ -70,12 +60,12 @@ export const globalStructureSchema:GlobalStructure = {
   cover_letter: Joi.string().allow('').allow(null),
   offer: Joi.string().allow('', 'Yes', 'No', 'Rejected').allow(null),
   acceptedOffer: Joi.boolean(),
-};
+});
 
 // Extract Website list (indeed, linkedIn, etc) & Count of each & number of feedback receive.
-export const websiteInfoSchema: WebsiteInfo = {
+export const websiteInfoSchema = Joi.object({
   _id: Joi.string(),
   count: Joi.number(),
   answer_receive: Joi.number(),
-};
+});
 

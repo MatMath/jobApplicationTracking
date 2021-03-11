@@ -1,6 +1,6 @@
 
 export interface AnalyticTitle {
-  _id: number,
+  _id: string | undefined,
   count: number,
 }
 

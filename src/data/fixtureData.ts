@@ -6,7 +6,7 @@ import {
   RecruitersInfo
 } from './types'
 
-const company:Company = {
+export const company:Company = {
   _id: undefined,
   name: null,
   email: null,
@@ -24,6 +24,8 @@ const company:Company = {
   contact: null,
   link: null,
 };
+
+export const applicationType:string[] = ['Recruiters', 'Direct'];
 
 export const recruitersInfo:RecruitersInfo  = {
   _id: undefined,
