@@ -11,7 +11,7 @@ let dbName;
 const dBconnect = async () => {
   let client;
   try {
-    client = await MongoClient.connect(mongourl, { useNewUrlParser: true });
+    client = await MongoClient.connect(mongourl, { useNewUrlParser: true, useUnifiedTopology: false });
     dbName = client.db(mongoDBName);
     return dbName;
   } catch (error) {
