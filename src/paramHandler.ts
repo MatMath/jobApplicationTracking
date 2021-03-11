@@ -1,11 +1,11 @@
 // Global import
-const express = require('express');
-const Boom = require('boom');
+import express from 'express';
+import Boom from 'boom';
 
 // costum import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName } = require('./data/fixtureData');
+import { log } from './logs';
+import { getDbHandle } from './database';
+import { dbName } from './data/fixtureData';
 
 const router = express.Router();
 let db = getDbHandle();

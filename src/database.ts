@@ -1,14 +1,14 @@
 // Generic libs
-const { MongoClient, MongoError } = require('mongodb');
+import { MongoClient, MongoError, Db } from 'mongodb';
+import { Request, Response, NextFunction } from 'express';
 
-// Custom fnct
-const config = require('../config.json');
-const { log } = require('./logs');
+// Custom function
+import { mongourl, mongoDBName } from '../config.js';
+import { log } from './logs';
 
-const { mongourl, mongoDBName } = config;
-let dbName;
+let dbName: Db;
 
-const dBconnect = async () => {
+export const dBconnect = async (): Promise<Db> => {
   let client;
   try {
     client = await MongoClient.connect(mongourl, { useNewUrlParser: true, useUnifiedTopology: false });
@@ -20,7 +20,7 @@ const dBconnect = async () => {
   }
 };
 
-const handleDatabaseError = (error, req, res, next) => {
+export const handleDatabaseError = (error: Error, req: Request, res: Response, next: NextFunction) => {
   if (error instanceof MongoError) {
     return res.status(503).json({
       type: 'MongoError',
@@ -30,8 +30,4 @@ const handleDatabaseError = (error, req, res, next) => {
   return next(error);
 };
 
-module.exports = {
-  dBconnect,
-  handleDatabaseError,
-  getDbHandle: () => dbName,
-};
+export const getDbHandle = (): Db => dbName

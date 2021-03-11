@@ -71,8 +71,15 @@ export interface RecruitersInfo {
   notes?: string,
 };
 
+export interface User {
+  provider: string, // ex: 'google'
+  displayName: string,
+  email:string,
+  gender:string,
+}
+
 export interface WebsiteInfo {
   _id: string | undefined,
   count: number,
-  answer_receive: number, // count of time we get an answer back
+  answer_receive: number, // Number time we get an answer back from website
 }

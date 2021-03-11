@@ -1,6 +1,6 @@
-const bunyan = require('bunyan');
-const path = require('path');
-const fs = require('fs');
+import bunyan, {LogLevel} from 'bunyan';
+import path from 'path';
+import fs from 'fs';
 
 const name = 'mongoExpress';
 
@@ -11,7 +11,7 @@ if (!fs.existsSync(path.join(__dirname, '../logs'))) {
   console.log('DIRNAME:', __dirname);
   fs.mkdirSync(path.join(__dirname, '../logs'));
 }
-module.exports.log = bunyan.createLogger({
+export const log = bunyan.createLogger({
   level: 'info',
   name,
   streams: [{
@@ -32,7 +32,7 @@ module.exports.log = bunyan.createLogger({
   }],
 });
 
-module.exports.getBunyanLog = (level) => {
+export const getBunyanLog = (level:any) => {
   if (level === 'all') {
     const allLogs = fs.readFileSync(debugLogsLocation, 'utf8'); // fs.readFileSync will work until log reach 1G but that will never happen.
     let logsArray = allLogs.split('\n').filter(item => item.length > 5).reverse();
@@ -72,5 +72,5 @@ module.exports.getBunyanLog = (level) => {
       error: item.error,
     }));
   }
-  return 'No Log found or problem lookign for them';
+  return 'No Log found or problem looking for them';
 };

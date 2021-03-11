@@ -11,7 +11,7 @@ import { dbName } from '../data/fixtureData';
 import { RecruitersInfo } from '../data/types';
 import { recruitersInfoSchema } from '../data/joiSchema';
 
-const router = express.Router();
+export const recruitersHandler = express.Router();
 let db = getDbHandle();
 
 let { recruiters } = dbName;
@@ -28,26 +28,26 @@ declare global {
   }
 }
 
-router.use((req, res, next) => {
+recruitersHandler.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   recruiters = (process.env.DBRECRU) ? process.env.DBRECRU : recruiters; // Variable name for testing the DB.
   log.info({ fnct: 'Job request' }, 'Request for the Job');
   next();
 });
 
-router.get('/', (req:Request, res:Response) => {
+recruitersHandler.get('/', (req:Request, res:Response) => {
   db.collection(recruiters).find({ email: req.user.email }).toArray((err:Error, results: RecruitersInfo[]) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
 });
-router.use((req:Request, res:Response, next) => {
+recruitersHandler.use((req:Request, res:Response, next) => {
   if (req.user.email === 'demouser@example.com') {
     return res.json({ status: 'Demo user' });
   }
   return next();
 });
-router.post('/', (req:Request, res:Response, next) => {
+recruitersHandler.post('/', (req:Request, res:Response, next) => {
   const bodyData = req.body as RecruitersInfo;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
   bodyData.email = req.user.email;
@@ -62,7 +62,7 @@ router.post('/', (req:Request, res:Response, next) => {
     next(Boom.badRequest('Wrong Data Structure', error))
   } 
 });
-router.put('/', (req:Request, res:Response, next) => {
+recruitersHandler.put('/', (req:Request, res:Response, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing ID data')); }
   const tmp = { ...req.body, _id: new ObjectID(_id), email: req.user.email };
@@ -82,7 +82,7 @@ router.put('/', (req:Request, res:Response, next) => {
   }
     
 });
-router.delete('/:id', (req:Request, res:Response) => {
+recruitersHandler.delete('/:id', (req:Request, res:Response) => {
   const { id } = req.params;
   return db.collection(recruiters).remove({ _id: new ObjectID(id) }, { w: 1 }, (err:Error, data:string[]) => {
     if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
@@ -90,12 +90,10 @@ router.delete('/:id', (req:Request, res:Response) => {
   });
 });
 
-router.delete('/', (req:Request, res:Response, next) => {
+recruitersHandler.delete('/', (req:Request, res:Response, next) => {
   if (process.env.NODE_ENV !== 'test') { return next(Boom.badRequest('Not in Test mode')); }
   return db.collection(recruiters).remove(null, null, (err:Error, data:string[]) => {
     if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
-
-module.exports = router;

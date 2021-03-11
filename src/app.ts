@@ -1,40 +1,40 @@
 // Generic libs
-const express = require('express');
-const path = require('path');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth2').Strategy;
-const cookieParser = require('cookie-parser');
+import express from 'express';
+import path from 'path';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import passport from 'passport';
+import {Strategy as LocalStrategy} from 'passport-local';
+import {Strategy as GoogleStrategy} from 'passport-google-oauth2';
+import cookieParser from 'cookie-parser';
 // Tmp until I understand and then store it in Mongo Directly
-const session = require('express-session');
+import session from 'express-session';
 
 // custom libs
-const { log, getBunyanLog } = require('./logs');
-const { dBconnect, handleDatabaseError } = require('./database');
-const { routeNotFound, genericErrorHandling } = require('./errorHandling');
-const {
+import { log, getBunyanLog } from './logs';
+import { dBconnect, handleDatabaseError } from './database';
+import { routeNotFound, genericErrorHandling } from './errorHandling';
+import {
   globalStructure,
   meetingInfo,
   applicationType,
-} = require('./data/fixtureData');
+} from './data/fixtureData';
 
 // Routing
-const cieHandler = require('./cieHandler');
-const listHandler = require('./listHandler');
-const recruitersHandler = require('./recruitersHandler');
-const analyticHandler = require('./analyticHandler');
-const paramHandler = require('./paramHandler');
-const { convertDataStructure, writeUserToDB } = require('./userHandler');
+import cieHandler from './cieHandler';
+import { listHandler } from './listHandler';
+import { recruitersHandler } from './recruiters/recruitersHandler';
+import { analyticHandler } from './analyticHandler';
+import paramHandler from './paramHandler';
+import { convertDataStructure, writeUserToDB } from './userHandler';
 
 // Vars:
-const {
+import {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   cookie_secret,
   callbackURL,
-} = require('../config.json');
+} from '../config.js';
 
 const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.
@@ -107,7 +107,7 @@ app.get('/logout', (req, res) => {
   req.logout();
   res.redirect('/login');
 });
-app.use(ensureAuthenticated); // Everything after is Locked
+app.use(ensureAuthenticated); // Everything after this need to be authenticated
 app.use(express.static(uiFile));
 // Get info
 app.get('/log/all', (req, res) => res.json(getBunyanLog('all')));

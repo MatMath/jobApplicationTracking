@@ -1,24 +1,19 @@
-const { dbName } = require('./data/fixtureData');
-const { getDbHandle } = require('./database');
-const { log } = require('./logs');
+import { dbName } from './data/fixtureData';
+import { User } from './data/types';
+import { getDbHandle } from './database';
+import { log } from './logs';
 
 const { userCollection } = dbName;
 let db = getDbHandle();
 
-const convertDataStructure = (user) => {
+export const convertDataStructure = (user: User): User => {
   // eslint-disable-next-line object-curly-newline
   const { provider, displayName, email, gender } = user;
   // eslint-disable-next-line object-curly-newline
   return { provider, displayName, email, gender };
-  // const tmp = {
-  //   provider: 'google',
-  //   displayName: 'Math Leg',
-  //   email: 'my.email@gmail.com',
-  //   gender: 'male'
-  // }
 };
 
-const writeUserToDB = (user) => {
+export const writeUserToDB = (user: User) => {
   db = (db === undefined) ? getDbHandle() : db;
   return new Promise((resolve, reject) => {
     db.collection(userCollection).update({ email: user.email }, user, { upsert: true }, (err) => {
@@ -29,9 +24,4 @@ const writeUserToDB = (user) => {
       return resolve('Saved to database');
     });
   });
-};
-
-module.exports = {
-  convertDataStructure,
-  writeUserToDB,
 };

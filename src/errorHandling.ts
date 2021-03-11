@@ -1,13 +1,14 @@
+import { Request, Response, NextFunction, Errback } from 'express';
 // This is to have generic error handling for later.
 
-const routeNotFound = (req, res, next) => {
+const routeNotFound = (req:Request, res:Response, next:NextFunction) => {
   const err = new Error('Not Found');
-  err.status = 404;
+  res.status(404);
   next(err);
 };
 
 // 4 argument needed for express to know it is error handling
-const genericErrorHandling = (err, req, res, next) => { // eslint-disable-line no-unused-vars
+const genericErrorHandling = (err:Errback, req:Request, res:Response, next:NextFunction) => { // eslint-disable-line no-unused-vars
   if (err.isBoom) {
     return res.status(err.output.statusCode).send({ ...err.output.payload, data: err.data });
   }

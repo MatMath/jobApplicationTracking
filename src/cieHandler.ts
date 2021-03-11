@@ -1,14 +1,16 @@
 // Global import
-const express = require('express');
-const Boom = require('boom');
-const Joi = require('joi');
-const { ObjectID } = require('mongodb');
+import express from 'express';
+import Boom from 'boom';
+import Joi from 'joi';
+import { ObjectID } from 'mongodb';
 
 // costum import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName } = require('./data/fixtureData');
-const { companySchema } = require('./data/joiSchema');
+import { log } from './logs';
+import { getDbHandle } from './database';
+import { dbName } from './data/fixtureData';
+import { companySchema } from './data/joiSchema';
+
+import {Company} from './data/types'
 
 const router = express.Router();
 let db = getDbHandle();
@@ -23,7 +25,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', (req, res) => {
-  db.collection(cie).find({ email: req.user.email }).toArray((err, results) => {
+  db.collection(cie).find({ email: req.user.email }).toArray((err:Error, results:Company[]) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
@@ -38,33 +40,41 @@ router.post('/', (req, res, next) => {
   const cieData = req.body;
   if (!cieData || Object.keys(cieData).length === 0) { return next(Boom.badRequest('Missing data')); }
   cieData.email = req.user.email;
-  return Joi.validate(cieData, companySchema)
-    .then(() => db.collection(cie).save(cieData, (err) => {
+  try {
+    Joi.assert(cieData, companySchema)
+    db.collection(cie).save(cieData, (err:Error) => {
       if (err) return log.warn({ fnct: 'Push New Company', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push company' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    })
+  } catch (error) {
+    next(Boom.badRequest('Wrong Data Structure', error))
+  }
+  
+
 });
 router.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
-  const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
+  const tmp = { ...req.body, _id: new ObjectID(_id), email: req.user.email };
   // I cannot use tmp because it complain about _id that it need to be a string.
-  return Joi.validate({ ...req.body, email: tmp.email }, companySchema)
-    .then(() => db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
+  try {
+    Joi.assert({ ...req.body, email: tmp.email }, companySchema)  
+    db.collection(cie).findOneAndUpdate({ _id: new ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err:Error) => {
       if (err) {
         log.warn({ fnct: 'Put Old Company', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));
       }
       log.info({ fnct: 'Push company' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    })
+  } catch (error) {
+    next(Boom.badRequest('Wrong Data Structure', error))
+  }
 });
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
-  return db.collection(cie).remove({ _id: ObjectID(id) }, { w: 1 }, (err, data) => {
+  return db.collection(cie).remove({ _id: new ObjectID(id) }, { w: 1 }, (err:Error, data:string[]) => {
     if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
@@ -72,7 +82,7 @@ router.delete('/:id', (req, res) => {
 
 router.delete('/', (req, res, next) => {
   if (process.env.NODE_ENV !== 'test') { return next(Boom.badRequest('Not in Test mode')); }
-  return db.collection(cie).remove(null, null, (err, data) => {
+  return db.collection(cie).remove(null, null, (err:Error, data:string[]) => {
     if (err) return log.warn({ fnct: 'Delete Company', error: err }, 'Error in the Delete');
     return res.json(data);
   });
