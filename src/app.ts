@@ -1,15 +1,16 @@
 // Generic libs
-import express from 'express';
+import express, {Request, Response, NextFunction} from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import passport from 'passport';
-import {Strategy as LocalStrategy} from 'passport-local';
-import {Strategy as GoogleStrategy} from 'passport-google-oauth2';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth2';
 import cookieParser from 'cookie-parser';
 // Tmp until I understand and then store it in Mongo Directly
 import session from 'express-session';
 
+import { User } from './data/types';
 // custom libs
 import { log, getBunyanLog } from './logs';
 import { dBconnect, handleDatabaseError } from './database';
@@ -21,11 +22,11 @@ import {
 } from './data/fixtureData';
 
 // Routing
-import cieHandler from './cieHandler';
+import { cieHandler } from './cieHandler';
 import { listHandler } from './listHandler';
 import { recruitersHandler } from './recruiters/recruitersHandler';
 import { analyticHandler } from './analyticHandler';
-import paramHandler from './paramHandler';
+import { paramHandler } from './paramHandler';
 import { convertDataStructure, writeUserToDB } from './userHandler';
 
 // Vars:
@@ -39,14 +40,14 @@ import {
 const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.
 passport.serializeUser((user, done) => {
-  const cleanUser = convertDataStructure(user);
+  const cleanUser = convertDataStructure(user as User);
   writeUserToDB(cleanUser).then(() => done(null, cleanUser))
     .catch((err) => {
-      console.log('IN THE CATCH', err);
+      console.log('writeUserToDB CATCH', err);
     });
 });
 
-passport.deserializeUser((obj, done) => {
+passport.deserializeUser((obj:User, done) => {
   done(null, obj);
 });
 
@@ -57,12 +58,12 @@ passport.use('google', new GoogleStrategy(
     callbackURL,
     passReqToCallback: true,
   },
-  (request, accessToken, refreshToken, profile, done) => {
+  (request:Request, accessToken:string, refreshToken:string, profile:any, done:Function) => {
     process.nextTick(() => done(null, profile));
   },
 ));
 
-passport.use('local', new LocalStrategy((username, password, done) => {
+passport.use('local', new LocalStrategy((username:string, password:string, done) => {
   const user = {
     provider: 'local-login',
     displayName: 'Demo User',
@@ -135,7 +136,7 @@ app.use(genericErrorHandling);
 
 app.dBconnect = dBconnect;
 
-function ensureAuthenticated(req, res, next) {
+function ensureAuthenticated(req:Request, res:Response, next:NextFunction) {
   if (process.env.NODE_ENV === 'test') {
     req.user = { email: 'testuser@gmail.com' };
     return next();

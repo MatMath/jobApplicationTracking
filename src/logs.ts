@@ -1,4 +1,4 @@
-import bunyan, {LogLevel} from 'bunyan';
+import bunyan from 'bunyan';
 import path from 'path';
 import fs from 'fs';
 

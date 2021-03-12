@@ -1,6 +1,6 @@
 # Dependency directory
 node_modules
-config.json
+config.js
 dist/*
 
 logs/*
