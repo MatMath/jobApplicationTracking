@@ -34,7 +34,7 @@ const {
   GOOGLE_CLIENT_SECRET,
   cookie_secret,
   callbackURL,
-} = require('../config.json');
+} = require('../config.js');
 
 const uiFile = path.join(__dirname, '../dist/');
 // Passport session setup.

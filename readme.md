@@ -41,7 +41,7 @@ Or use the Compass UI to create each collection manually.
 (some info here)[https://flaviocopes.com/express-https-self-signed-certificate/]
 
 ### Getting Started
-- $ cp config.sample.json config.json -> Update the Mongo URL to your config.json
+- $ cp config.sample.js config.js -> Update the Mongo URL to your config.js
 - $ npm install
 - $ npm start
 Now the server is running & serving the login page & dist folder when Authenticated (angular App)

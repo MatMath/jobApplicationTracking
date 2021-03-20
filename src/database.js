@@ -1,11 +1,10 @@
-// Generic libs
+// Generic
 const { MongoClient, MongoError } = require('mongodb');
 
-// Custom fnct
-const config = require('../config.json');
+// Custom
+const { mongourl, mongoDBName } = require('../config.js');
 const { log } = require('./logs');
 
-const { mongourl, mongoDBName } = config;
 let dbName;
 
 const dBconnect = async () => {

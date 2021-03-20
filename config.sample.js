@@ -1,4 +1,4 @@
-{
+module.exports = {
     "mongourl": "mongodb://username:pass@mongourl",
     "mongoDBName": "test",
     "GOOGLE_CLIENT_ID": "--insert-google-client-id-here--",
