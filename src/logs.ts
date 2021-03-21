@@ -11,7 +11,7 @@ if (!fs.existsSync(path.join(__dirname, '../logs'))) {
   console.log('DIRNAME:', __dirname);
   fs.mkdirSync(path.join(__dirname, '../logs'));
 }
-module.exports.log = bunyan.createLogger({
+export const log = bunyan.createLogger({
   level: 'info',
   name,
   streams: [{
@@ -32,12 +32,12 @@ module.exports.log = bunyan.createLogger({
   }],
 });
 
-module.exports.getBunyanLog = (level) => {
+export const getBunyanLog = (level) => {
   if (level === 'all') {
     const allLogs = fs.readFileSync(debugLogsLocation, 'utf8'); // fs.readFileSync will work until log reach 1G but that will never happen.
     let logsArray = allLogs.split('\n').filter(item => item.length > 5).reverse();
     logsArray = logsArray.map(line => JSON.parse(line)); // Extremely expensive but only run when the user ask for it.
-    return logsArray.map(item => ({
+    return logsArray.map((item:any) => ({
       time: item.time,
       fnct: item.fnct,
       level: item.level,
@@ -50,7 +50,7 @@ module.exports.getBunyanLog = (level) => {
     const allLogs = fs.readFileSync(debugLogsLocation, 'utf8');
     let logsArray = allLogs.split('\n').filter(item => item.length > 5).reverse();
     logsArray = logsArray.map(line => JSON.parse(line)); // Extremely expensive but only run when the user ask for it.
-    return logsArray.filter(line => (line.level >= 30)).map((item) => {
+    return logsArray.filter((line:any) => (line.level >= 30)).map((item:any) => {
       let itemLevel = 'Info';
       if (item.level === 40) {
         itemLevel = 'WARN';
@@ -64,7 +64,7 @@ module.exports.getBunyanLog = (level) => {
     const allLogs = fs.readFileSync(warnLogsLocation, 'utf8');
     let logsArray = allLogs.split('\n').filter(item => item.length > 5).reverse();
     logsArray = logsArray.map(line => JSON.parse(line)); // Extremely expensive but only run when the user ask for it.
-    return logsArray.map(item => ({
+    return logsArray.map((item:any) => ({ // TODO: fix typing of any
       time: item.time,
       fnct: item.fnct,
       level: item.level,
@@ -72,5 +72,5 @@ module.exports.getBunyanLog = (level) => {
       error: item.error,
     }));
   }
-  return 'No Log found or problem lookign for them';
+  return 'No Log found or problem looking for them';
 };

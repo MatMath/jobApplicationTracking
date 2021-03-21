@@ -1,13 +1,13 @@
 // This is to have generic error handling for later.
 
-const routeNotFound = (req, res, next) => {
+export const routeNotFound = (req, res, next) => {
   const err = new Error('Not Found');
-  err.status = 404;
+  res.status = 404;
   next(err);
 };
 
 // 4 argument needed for express to know it is error handling
-const genericErrorHandling = (err, req, res, next) => { // eslint-disable-line no-unused-vars
+export const genericErrorHandling = (err, req, res, next) => { // eslint-disable-line no-unused-vars
   if (err.isBoom) {
     return res.status(err.output.statusCode).send({ ...err.output.payload, data: err.data });
   }
@@ -17,9 +17,4 @@ const genericErrorHandling = (err, req, res, next) => { // eslint-disable-line n
     error: {},
     title: 'error',
   });
-};
-
-module.exports = {
-  routeNotFound,
-  genericErrorHandling,
 };

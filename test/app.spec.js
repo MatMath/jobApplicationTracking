@@ -13,7 +13,7 @@ const {
   companySchema,
   recruitersInfo,
   recruitersInfoSchema,
-} = require('../src/objectStructure');
+} = require('../src/data/joiStructure');
 
 let server;
 const iDToDelete = {

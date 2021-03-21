@@ -1,13 +1,13 @@
 // Generic
-const { MongoClient, MongoError } = require('mongodb');
+import { MongoClient, MongoError } from 'mongodb';
 
 // Custom
-const { mongourl, mongoDBName } = require('../config.js');
-const { log } = require('./logs');
+import { mongourl, mongoDBName } from '../config.js';
+import { log } from './logs';
 
 let dbName;
 
-const dBconnect = async () => {
+export const dBconnect = async () => {
   let client;
   try {
     client = await MongoClient.connect(mongourl, { useNewUrlParser: true, useUnifiedTopology: false });
@@ -19,7 +19,7 @@ const dBconnect = async () => {
   }
 };
 
-const handleDatabaseError = (error, req, res, next) => {
+export const handleDatabaseError = (error, req, res, next) => {
   if (error instanceof MongoError) {
     return res.status(503).json({
       type: 'MongoError',
@@ -29,8 +29,4 @@ const handleDatabaseError = (error, req, res, next) => {
   return next(error);
 };
 
-module.exports = {
-  dBconnect,
-  handleDatabaseError,
-  getDbHandle: () => dbName,
-};
+export const getDbHandle = () => dbName;

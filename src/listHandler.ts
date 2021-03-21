@@ -5,23 +5,24 @@ const Joi = require('joi');
 const { ObjectID } = require('mongodb');
 
 // custom import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName, globalStructureSchema } = require('./objectStructure');
+import { log } from './logs';
+import { getDbHandle } from './database';
+import { globalStructureSchema } from './data/joiStructure';
+import { dbName } from './data/fixture';
 
-const router = express.Router();
+export const listHandler = express.Router();
 let db = getDbHandle();
 
 let { job } = dbName;
 // middleware that is specific to this router
-router.use((req, res, next) => {
+listHandler.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   job = (process.env.DBJOBS) ? process.env.DBJOBS : job; // Variable name for testing the DB.
   log.info({ fnct: 'Job request' }, 'Request for the Job');
   next();
 });
 
-router.get('/:id', (req, res) => {
+listHandler.get('/:id', (req, res) => {
   const { id } = req.params;
   db.collection(job).findOne({ _id: ObjectID(id) }, (err, docs) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
@@ -29,19 +30,19 @@ router.get('/:id', (req, res) => {
   });
 });
 
-router.get('/', (req, res) => {
+listHandler.get('/', (req, res) => {
   db.collection(job).find({ email: req.user.email }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
 });
-router.use((req, res, next) => {
+listHandler.use((req, res, next) => {
   if (req.user.email === 'demouser@example.com') {
     return res.json({ status: 'Demo user' });
   }
   return next();
 });
-router.post('/', (req, res, next) => {
+listHandler.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
   bodyData.email = req.user.email;
@@ -57,7 +58,7 @@ router.post('/', (req, res, next) => {
   }
 });
 
-router.put('/', (req, res, next) => {
+listHandler.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
@@ -77,7 +78,7 @@ router.put('/', (req, res, next) => {
   }
 });
 
-router.delete('/:id', (req, res) => {
+listHandler.delete('/:id', (req, res) => {
   const { id } = req.params;
   return db.collection(job).remove({ _id: ObjectID(id) }, { w: 1 }, (err, data) => {
     if (err) return log.warn({ fnct: 'Delete Job', error: err }, 'Error in the Delete');
@@ -85,12 +86,10 @@ router.delete('/:id', (req, res) => {
   });
 });
 
-router.delete('/', (req, res, next) => {
+listHandler.delete('/', (req, res, next) => {
   if (process.env.NODE_ENV !== 'test') { return next(Boom.badRequest('Not in Test mode')); }
   return db.collection(job).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Delete Job', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
-
-module.exports = router;

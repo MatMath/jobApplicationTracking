@@ -5,28 +5,28 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const GoogleStrategy = require ('passport-google-oauth2').Strategy;
 const cookieParser = require('cookie-parser');
 // Tmp until I understand and then store it in Mongo Directly
 const session = require('express-session');
 
 // custom libs
-const { log, getBunyanLog } = require('./logs');
-const { dBconnect, handleDatabaseError } = require('./database');
-const { routeNotFound, genericErrorHandling } = require('./errorHandling');
-const {
+import { log, getBunyanLog } from './logs';
+import { dBconnect, handleDatabaseError } from './database';
+import { routeNotFound, genericErrorHandling } from './errorHandling';
+import {
   globalStructure,
   meetingInfo,
   applicationType,
-} = require('./objectStructure');
+} from './data/fixture';
 
 // Routing
-const cieHandler = require('./cieHandler');
-const listHandler = require('./listHandler');
-const recruitersHandler = require('./recruitersHandler');
-const analyticHandler = require('./analyticHandler');
-const paramHandler = require('./paramHandler');
-const { convertDataStructure, writeUserToDB } = require('./userHandler');
+import { analyticHandler } from './analyticHandler';
+import { cieHandler } from './cieHandler';
+import { listHandler } from './listHandler';
+import { paramHandler } from './paramHandler';
+import { recruitersHandler } from './recruitersHandler';
+import { convertDataStructure, writeUserToDB } from './userHandler';
 
 // Vars:
 const {

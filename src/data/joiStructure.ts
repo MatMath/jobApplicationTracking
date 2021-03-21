@@ -1,24 +1,6 @@
 const Joi = require('joi');
-// Joi.objectId = require('joi-objectid')(Joi);
 
-const company = {
-  name: undefined,
-  location: undefined,
-  gps: {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [125, 10],
-    },
-    properties: {
-      name: 'Dinagat Islands',
-    },
-  },
-  contact: undefined,
-  link: undefined,
-};
-
-const gpsSchema = Joi.object({
+export const gpsSchema = Joi.object({
   type: Joi.string(),
   geometry: {
     type: Joi.string(),
@@ -29,12 +11,12 @@ const gpsSchema = Joi.object({
   },
 });
 
-const analyticTitleSchema = Joi.object({
+export const analyticTitleSchema = Joi.object({
   _id: Joi.string(),
   count: Joi.number(),
 });
 
-const companySchema = Joi.object({
+export const companySchema = Joi.object({
   _id: Joi.string(),
   email: Joi.string().required(),
   name: Joi.string().required(),
@@ -44,13 +26,7 @@ const companySchema = Joi.object({
   link: Joi.string().allow('').allow(null),
 });
 
-const recruitersInfo = {
-  cie: undefined,
-  name: undefined,
-  notes: undefined,
-};
-
-const recruitersInfoSchema = Joi.object({
+export const recruitersInfoSchema = Joi.object({
   _id: Joi.string(),
   email: Joi.string().required(),
   cie: Joi.string().required(),
@@ -58,15 +34,7 @@ const recruitersInfoSchema = Joi.object({
   notes: Joi.string().allow('').allow(null),
 });
 
-const meetingInfo = {
-  date: undefined,
-  participants: [],
-  purpose: undefined,
-  challenge: undefined,
-  notes: undefined,
-};
-
-const meetingInfoSchema = Joi.object({
+export const meetingInfoSchema = Joi.object({
   date: Joi.number().required(),
   participants: Joi.array(),
   purpose: Joi.string().required(),
@@ -74,28 +42,7 @@ const meetingInfoSchema = Joi.object({
   notes: Joi.string().allow('').allow(null),
 });
 
-const applicationType = ['Recruiters', 'Direct'];
-
-const globalStructure = {
-  email: undefined,
-  location: undefined,
-  website: undefined,
-  applicationType: undefined,
-  recruiters: recruitersInfo,
-  company,
-  title: undefined,
-  description: undefined,
-  date: undefined,
-  application: false,
-  answer_receive: false,
-  meeting: [],
-  notes: undefined,
-  cover_letter: undefined,
-  offer: undefined,
-  acceptedOffer: undefined,
-};
-
-const globalStructureSchema = Joi.object({
+export const globalStructureSchema = Joi.object({
   _id: Joi.string(),
   email: Joi.string().required(),
   location: Joi.string().required(),
@@ -116,31 +63,8 @@ const globalStructureSchema = Joi.object({
 });
 
 // Extract Website list (indeed, linkedIn, etc) & Count of each & number of feedback receive.
-const websiteInfoSchema = Joi.object({
+export const websiteInfoSchema = Joi.object({
   _id: Joi.string(),
   count: Joi.number(),
   answer_receive: Joi.number(),
 });
-
-const dbName = {
-  cie: 'company',
-  job: 'jobapplication',
-  recruiters: 'recruiters',
-  userCollection: 'user',
-};
-
-module.exports = {
-  analyticTitleSchema,
-  globalStructure,
-  globalStructureSchema,
-  meetingInfo,
-  meetingInfoSchema,
-  applicationType,
-  recruitersInfo,
-  recruitersInfoSchema,
-  company,
-  companySchema,
-  gpsSchema,
-  websiteInfoSchema,
-  dbName,
-};

@@ -5,36 +5,37 @@ const Joi = require('joi');
 const { ObjectID } = require('mongodb');
 
 // custom import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName, recruitersInfoSchema } = require('./objectStructure');
+import { log } from './logs';
+import { getDbHandle } from './database';
+import { recruitersInfoSchema } from './data/joiStructure';
+import { dbName } from './data/fixture';
 
 
-const router = express.Router();
+export const recruitersHandler = express.Router();
 let db = getDbHandle();
 
 let { recruiters } = dbName;
 // middleware that is specific to this router
-router.use((req, res, next) => {
+recruitersHandler.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   recruiters = (process.env.DBRECRU) ? process.env.DBRECRU : recruiters; // Variable name for testing the DB.
   log.info({ fnct: 'Job request' }, 'Request for the Job');
   next();
 });
 
-router.get('/', (req, res) => {
+recruitersHandler.get('/', (req, res) => {
   db.collection(recruiters).find({ email: req.user.email }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
 });
-router.use((req, res, next) => {
+recruitersHandler.use((req, res, next) => {
   if (req.user.email === 'demouser@example.com') {
     return res.json({ status: 'Demo user' });
   }
   return next();
 });
-router.post('/', (req, res, next) => {
+recruitersHandler.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
   bodyData.email = req.user.email;
@@ -49,7 +50,7 @@ router.post('/', (req, res, next) => {
     next(Boom.badRequest('Wrong Data Structure', error))
   }
 });
-router.put('/', (req, res, next) => {
+recruitersHandler.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing ID data')); }
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
@@ -68,19 +69,17 @@ router.put('/', (req, res, next) => {
     return next(Boom.badRequest('Wrong Data Structure', error))
   }
 });
-router.delete('/:id', (req, res) => {
+recruitersHandler.delete('/:id', (req, res) => {
   const { id } = req.params;
   return db.collection(recruiters).remove({ _id: ObjectID(id) }, { w: 1 }, (err, data) => {
     if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
-router.delete('/', (req, res, next) => {
+recruitersHandler.delete('/', (req, res, next) => {
   if (process.env.NODE_ENV !== 'test') { return next(Boom.badRequest('Not in Test mode')); }
   return db.collection(recruiters).remove(null, null, (err, data) => {
     if (err) return log.warn({ fnct: 'Delete Recruiters', error: err }, 'Error in the Delete');
     return res.json(data);
   });
 });
-
-module.exports = router;

@@ -4,17 +4,17 @@ const express = require('express');
 // const Joi = require('joi');
 // const { ObjectID } = require('mongodb');
 
-// costum import
+// custom import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
-const { dbName } = require('./objectStructure');
+const { dbName } = require('./data/fixture');
 
-const router = express.Router();
+export const analyticHandler = express.Router();
 let db = getDbHandle();
 
 let { recruiters, job, cie } = dbName;
 // middleware that is specific to this router
-router.use((req, res, next) => {
+analyticHandler.use((req, res, next) => {
   db = (db === undefined) ? getDbHandle() : db;
   recruiters = (process.env.DBRECRU) ? process.env.DBRECRU : recruiters; // Variable name for testing the DB.
   job = (process.env.DBJOBS) ? process.env.DBJOBS : job; // Variable name for testing the DB.
@@ -23,7 +23,7 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/website', (req, res) => {
+analyticHandler.get('/website', (req, res) => {
   db.collection(job)
     .aggregate([
       {
@@ -44,7 +44,7 @@ router.get('/website', (req, res) => {
     .toArray((err, docs) => res.json(docs));
 });
 
-router.get('/title', (req, res) => {
+analyticHandler.get('/title', (req, res) => {
   db.collection(job)
     .aggregate([
       {
@@ -61,5 +61,3 @@ router.get('/title', (req, res) => {
       }])
     .toArray((err, result) => res.json(result));
 });
-
-module.exports = router;
