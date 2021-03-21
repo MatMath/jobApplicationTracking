@@ -62,13 +62,10 @@ describe('Testing the flow', function bob() {
       recruiters: 'string2',
       email: 'test',
     };
-    Joi.validate(cie, companySchema)
-      .then(() => Joi.validate(recru, recruitersInfoSchema))
-      .then(() => Joi.validate(list, globalStructureSchema))
-      .then(() => done())
-      .catch((err) => {
-        expect(err).to.be(null);
-      });
+    Joi.assert(cie, companySchema);
+    Joi.assert(recru, recruitersInfoSchema);
+    Joi.assert(list, globalStructureSchema);
+    done();
   });
 
   describe('Recruiters flow', () => {
@@ -211,7 +208,7 @@ describe('Testing the flow', function bob() {
         done();
       });
     });
-    it('Update a Recruiters with missing info', (done) => {
+    it('Update a compagnie with missing info', (done) => {
       request.put(`${url}/cie`, { json: { _id: iDToDelete.cie } }, (err, resp) => {
         expect(err).to.be(null);
         expect(resp.statusCode).to.be(400);

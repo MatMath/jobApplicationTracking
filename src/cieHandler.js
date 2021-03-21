@@ -37,29 +37,36 @@ router.post('/', (req, res, next) => {
   const cieData = req.body;
   if (!cieData || Object.keys(cieData).length === 0) { return next(Boom.badRequest('Missing data')); }
   cieData.email = req.user.email;
-  return Joi.validate(cieData, companySchema)
-    .then(() => db.collection(cie).save(cieData, (err) => {
+  try {
+    Joi.assert(cieData, companySchema)
+    console.log('JOI asserted');
+    db.collection(cie).save(cieData, (err) => {
       if (err) return log.warn({ fnct: 'Push New Company', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push company' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    });
+  } catch (error) {
+   next(Boom.badRequest('Wrong Data Structure', error)) 
+  }
 });
 router.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
   // I cannot use tmp because it complain about _id that it need to be a string.
-  return Joi.validate({ ...req.body, email: tmp.email }, companySchema)
-    .then(() => db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
+  try {
+    Joi.assert({ ...req.body, email: tmp.email }, companySchema)
+    db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Company', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));
       }
       log.info({ fnct: 'Push company' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    })
+  } catch (error) {
+    next(Boom.badRequest('Wrong Data Structure', error));
+  }
 });
 router.delete('/:id', (req, res) => {
   const { id } = req.params;

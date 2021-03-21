@@ -4,7 +4,7 @@ const Boom = require('boom');
 const Joi = require('joi');
 const { ObjectID } = require('mongodb');
 
-// costum import
+// custom import
 const { log } = require('./logs');
 const { getDbHandle } = require('./database');
 const { dbName, globalStructureSchema } = require('./objectStructure');
@@ -45,13 +45,16 @@ router.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
   bodyData.email = req.user.email;
-  return Joi.validate(bodyData, globalStructureSchema)
-    .then(() => db.collection(job).save(bodyData, (err) => {
+  try {
+    Joi.assert(bodyData, globalStructureSchema)
+    db.collection(job).save(bodyData, (err) => {
       if (err) return log.warn({ fnct: 'Push New Job', error: err }, 'Error in the POST');
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    })
+  } catch (error) {
+    next(Boom.badRequest('Wrong Data Structure', error))
+  }
 });
 
 router.put('/', (req, res, next) => {
@@ -59,16 +62,19 @@ router.put('/', (req, res, next) => {
   if (!_id) { return next(Boom.badRequest('Missing data')); }
   const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
   // I cannot use tmp because it complain about _id that it need to be a string.
-  return Joi.validate({ ...req.body, email: tmp.email }, globalStructureSchema)
-    .then(() => db.collection(job).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
+  try {
+    Joi.assert({ ...req.body, email: tmp.email }, globalStructureSchema)
+    db.collection(job).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Job', error: err }, 'Error in the POST');
         return next(Boom.teapot('DB cannot make coffee', err));
       }
       log.info({ fnct: 'Push recruiters' }, 'saved to database');
       return res.json({ status: 'Saved to database' });
-    }))
-    .catch(err => next(Boom.badRequest('Wrong Data Structure', err)));
+    })
+  } catch (error) {
+    next(Boom.badRequest('Wrong Data Structure', error))
+  }
 });
 
 router.delete('/:id', (req, res) => {

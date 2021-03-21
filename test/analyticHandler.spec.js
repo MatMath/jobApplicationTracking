@@ -87,7 +87,8 @@ describe('Testing the Analytics', () => {
           expect(linkObj.count).to.be(4);
           expect(linkObj.answer_receive).to.be(2);
 
-          Joi.validate(data[0], websiteInfoSchema).then(() => { done(); });
+          Joi.assert(data[0], websiteInfoSchema)
+          done();
         });
       }, 2000); // Somehow the Promise.all take time to save to the DB and return a Ack and not a confirmation. (cue)
     });
@@ -103,7 +104,8 @@ describe('Testing the Analytics', () => {
         const fEndObj = data.filter(a => a._id === 'Front-end')[0];
         expect(fEndObj.count).to.be(1);
 
-        Joi.validate(data[0], analyticTitleSchema).then(() => { done(); });
+        Joi.assert(data[0], analyticTitleSchema)
+        done();
       });
     });
   });
@@ -114,7 +116,8 @@ describe('Testing the Analytics', () => {
       expect(response.statusCode).to.be(200);
       const data = JSON.parse(body);
       expect(data.length).to.not.be(0);
-      Joi.validate(data[0], gpsSchema).then(done);
+      Joi.assert(data[0], gpsSchema)
+      done();
     });
   });
 });

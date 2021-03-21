@@ -1,5 +1,5 @@
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
+// Joi.objectId = require('joi-objectid')(Joi);
 
 const company = {
   name: undefined,
@@ -18,7 +18,7 @@ const company = {
   link: undefined,
 };
 
-const gpsSchema = {
+const gpsSchema = Joi.object({
   type: Joi.string(),
   geometry: {
     type: Joi.string(),
@@ -27,22 +27,22 @@ const gpsSchema = {
   properties: {
     name: Joi.string(),
   },
-};
+});
 
-const analyticTitleSchema = {
+const analyticTitleSchema = Joi.object({
   _id: Joi.string(),
   count: Joi.number(),
-};
+});
 
-const companySchema = {
-  _id: Joi.objectId(),
+const companySchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: gpsSchema,
   contact: Joi.string().allow('').allow(null),
   link: Joi.string().allow('').allow(null),
-};
+});
 
 const recruitersInfo = {
   cie: undefined,
@@ -50,13 +50,13 @@ const recruitersInfo = {
   notes: undefined,
 };
 
-const recruitersInfoSchema = {
-  _id: Joi.objectId(),
+const recruitersInfoSchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
   notes: Joi.string().allow('').allow(null),
-};
+});
 
 const meetingInfo = {
   date: undefined,
@@ -66,13 +66,13 @@ const meetingInfo = {
   notes: undefined,
 };
 
-const meetingInfoSchema = {
+const meetingInfoSchema = Joi.object({
   date: Joi.number().required(),
   participants: Joi.array(),
   purpose: Joi.string().required(),
   challenge: Joi.string().allow('').allow(null),
   notes: Joi.string().allow('').allow(null),
-};
+});
 
 const applicationType = ['Recruiters', 'Direct'];
 
@@ -95,8 +95,8 @@ const globalStructure = {
   acceptedOffer: undefined,
 };
 
-const globalStructureSchema = {
-  _id: Joi.objectId(),
+const globalStructureSchema = Joi.object({
+  _id: Joi.string(),
   email: Joi.string().required(),
   location: Joi.string().required(),
   website: Joi.string().allow('').allow(null),
@@ -113,14 +113,14 @@ const globalStructureSchema = {
   cover_letter: Joi.string().allow('').allow(null),
   offer: Joi.string().allow('', 'Yes', 'No', 'Rejected').allow(null),
   acceptedOffer: Joi.boolean(),
-};
+});
 
 // Extract Website list (indeed, linkedIn, etc) & Count of each & number of feedback receive.
-const websiteInfoSchema = {
+const websiteInfoSchema = Joi.object({
   _id: Joi.string(),
   count: Joi.number(),
   answer_receive: Joi.number(),
-};
+});
 
 const dbName = {
   cie: 'company',
