@@ -8,9 +8,10 @@ const options = {
 };
 
 const app = require('../src/app');
+const { dBconnect } = require('../src/database')
 const port = process.env.API_PORT || 3001;
 
-app.dBconnect().then(() => {
+dBconnect().then(() => {
   const server = http.createServer(app).listen(port, () => {
     console.log(`Express server listening on port ${server.address().port}`);
   });

@@ -30,3 +30,9 @@ export const handleDatabaseError = (error, req, res, next) => {
 };
 
 export const getDbHandle = () => dbName;
+
+module.exports = {
+  dBconnect,
+  getDbHandle: () => dbName,
+  handleDatabaseError,
+};

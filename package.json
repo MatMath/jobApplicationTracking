@@ -8,7 +8,7 @@
     "start-dev": "NODE_ENV=dev ts-node bin/www",
     "debug": "ts-node --inspect bin/www",
     "nodemon": "NODE_ENV=test nodemon bin/www",
-    "test": "NODE_ENV=test mocha",
+    "test": "NODE_ENV=test ts-mocha",
     "lint": "eslint ."
   },
   "author": "matmath",
@@ -24,7 +24,6 @@
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "joi": "^17.4.0",
-    "joi-objectid": "^3.0.1",
     "mongodb": "^3.6.5",
     "passport": "^0.4.1",
     "passport-google-oauth2": "^0.2.0",
@@ -36,9 +35,11 @@
     "@types/bunyan": "^1.8.6",
     "@types/cookie-parser": "^1.4.2",
     "@types/cors": "^2.8.10",
+    "@types/expect": "^24.3.0",
     "@types/express": "^4.17.11",
     "@types/express-session": "^1.17.3",
     "@types/joi": "^17.2.3",
+    "@types/mocha": "^8.2.2",
     "@types/mongodb": "^3.6.10",
     "@types/node": "^14.14.35",
     "@types/passport": "^1.0.6",
@@ -51,6 +52,7 @@
     "eslint-plugin-mocha": "^8.1.0",
     "expect.js": "^0.3.1",
     "mocha": "^8.3.2",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "ts-mocha": "^8.0.0"
   }
 }

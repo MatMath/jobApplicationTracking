@@ -6,6 +6,7 @@ const Joi = require('joi');
 const port = 3456;
 const url = `http://localhost:${port}/json`;
 const app = require('../src/app');
+const { dBconnect }= require('../src/database');
 const {
   globalStructure,
   globalStructureSchema,
@@ -32,7 +33,7 @@ describe('Testing the flow', function bob() {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
-    app.dBconnect()
+    dBconnect()
       .then(() => new Promise((resolve) => {
         server = app.listen(port, resolve);
       }))

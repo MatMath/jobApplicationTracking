@@ -7,6 +7,7 @@ const port = 3456;
 const url = `http://localhost:${port}/json`;
 const analyticUrl = `${url}/analytic`;
 const app = require('../src/app');
+const { dBconnect } = require('../src/database');
 const {
   analyticTitleSchema,
   globalStructure,
@@ -21,13 +22,12 @@ const titleLoc = {
   location: 'Dublin',
 };
 
-
 describe('Testing the Analytics', () => {
   before((done) => {
     process.env.DBJOBS = 'testjobs';
     process.env.DBCIE = 'testcie';
     process.env.DBRECRU = 'testrecruiters';
-    app.dBconnect()
+    dBconnect()
       .then(() => new Promise((resolve) => {
         server = app.listen(port, resolve);
       }))

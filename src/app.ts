@@ -1,5 +1,5 @@
 // Generic libs
-const express = require('express');
+import express from 'express';
 const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -12,7 +12,7 @@ const session = require('express-session');
 
 // custom libs
 import { log, getBunyanLog } from './logs';
-import { dBconnect, handleDatabaseError } from './database';
+import { handleDatabaseError } from './database';
 import { routeNotFound, genericErrorHandling } from './errorHandling';
 import {
   globalStructure,
@@ -132,8 +132,6 @@ app.use(routeNotFound); // Should never reach here since the Front-end should ca
 // Error handler section
 app.use(handleDatabaseError);
 app.use(genericErrorHandling);
-
-app.dBconnect = dBconnect;
 
 function ensureAuthenticated(req, res, next) {
   if (process.env.NODE_ENV === 'test') {

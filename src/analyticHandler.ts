@@ -5,9 +5,9 @@ const express = require('express');
 // const { ObjectID } = require('mongodb');
 
 // custom import
-const { log } = require('./logs');
-const { getDbHandle } = require('./database');
-const { dbName } = require('./data/fixture');
+import { log } from './logs';
+import { getDbHandle } from './database';
+import { dbName } from './data/fixture';
 
 export const analyticHandler = express.Router();
 let db = getDbHandle();
