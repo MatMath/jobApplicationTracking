@@ -8,7 +8,7 @@ export type ApplicationType =  'Recruiters' | 'Direct'
 
 export interface Company {
   _id: string | undefined,
-  email: string | null,
+  userId: string | null,
   name: string | null,
   location: string | null,
   gps: Gps,
@@ -26,7 +26,7 @@ export interface DbName {
 type offer = null | 'Yes' | 'No' | 'Rejected';
 export interface GlobalStructure {
   _id: string | undefined,
-  email: string | null,
+  userId: string | null,
   location: string | null,
   website: string | null,
   applicationType: ApplicationType | null,
@@ -65,7 +65,7 @@ export interface MeetingInfo {
 
 export interface RecruitersInfo {
   _id: string | undefined,
-  email: string,
+  userId: string,
   cie: string,
   name: string,
   notes?: string,
@@ -75,4 +75,9 @@ export interface WebsiteInfo {
   _id: string | undefined,
   count: number,
   answer_receive: number, // count of time we get an answer back
+}
+
+export interface UserDetails {
+  userId:number | string;
+  displayName: string;
 }

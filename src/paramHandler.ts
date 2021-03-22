@@ -19,7 +19,7 @@ paramHandler.use((req, res, next) => {
   next();
 });
 
-// TODO: Filter by Email.
+// TODO: Filter by userId.
 paramHandler.get('/', (req, res, next) => {
   const websiteList = () => new Promise((resolve, reject) => {
     db.collection(job).distinct('website', (err, result) => {

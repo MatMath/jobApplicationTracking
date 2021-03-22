@@ -24,13 +24,13 @@ recruitersHandler.use((req, res, next) => {
 });
 
 recruitersHandler.get('/', (req, res) => {
-  db.collection(recruiters).find({ email: req.user.email }).toArray((err, results) => {
+  db.collection(recruiters).find({ userId: req.user.userId }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
 });
 recruitersHandler.use((req, res, next) => {
-  if (req.user.email === 'demouser@example.com') {
+  if (req.user.userId === 'demouser@example.com') {
     return res.json({ status: 'Demo user' });
   }
   return next();
@@ -38,7 +38,7 @@ recruitersHandler.use((req, res, next) => {
 recruitersHandler.post('/', (req, res, next) => {
   const bodyData = req.body;
   if (!bodyData || Object.keys(bodyData).length === 0) { return next(Boom.badRequest('Missing data')); }
-  bodyData.email = req.user.email;
+  bodyData.userId = req.user.userId;
   try {
     Joi.assert(bodyData, recruitersInfoSchema)
     db.collection(recruiters).save(bodyData, (err) => {
@@ -53,10 +53,10 @@ recruitersHandler.post('/', (req, res, next) => {
 recruitersHandler.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing ID data')); }
-  const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
+  const tmp = { ...req.body, _id: ObjectID(_id), userId: req.user.userId };
   // I cannot use tmp because it complain about _id that it need to be a string.
   try {
-    Joi.assert({ ...req.body, email: tmp.email }, recruitersInfoSchema)
+    Joi.assert({ ...req.body, userId: tmp.userId }, recruitersInfoSchema)
     db.collection(recruiters).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Recruiters', error: err }, 'Error in the POST');

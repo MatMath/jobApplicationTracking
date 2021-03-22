@@ -23,13 +23,13 @@ cieHandler.use((req, res, next) => {
 });
 
 cieHandler.get('/', (req, res) => {
-  db.collection(cie).find({ email: req.user.email }).toArray((err, results) => {
+  db.collection(cie).find({ userId: req.user.userId }).toArray((err, results) => {
     if (err) { return log.warn({ fnct: 'View Database', error: err }, 'Prob in VIew DB'); }
     return res.json(results);
   });
 });
 cieHandler.use((req, res, next) => {
-  if (req.user.email === 'demouser@example.com') {
+  if (req.user.userId === 'demouser@example.com') {
     return res.json({ status: 'Demo user' });
   }
   return next();
@@ -37,7 +37,7 @@ cieHandler.use((req, res, next) => {
 cieHandler.post('/', (req, res, next) => {
   const cieData = req.body;
   if (!cieData || Object.keys(cieData).length === 0) { return next(Boom.badRequest('Missing data')); }
-  cieData.email = req.user.email;
+  cieData.userId = req.user.userId;
   try {
     Joi.assert(cieData, companySchema)
     console.log('JOI asserted');
@@ -53,10 +53,10 @@ cieHandler.post('/', (req, res, next) => {
 cieHandler.put('/', (req, res, next) => {
   const { _id } = req.body;
   if (!_id) { return next(Boom.badRequest('Missing data')); }
-  const tmp = { ...req.body, _id: ObjectID(_id), email: req.user.email };
+  const tmp = { ...req.body, _id: ObjectID(_id), userId: req.user.userId };
   // I cannot use tmp because it complain about _id that it need to be a string.
   try {
-    Joi.assert({ ...req.body, email: tmp.email }, companySchema)
+    Joi.assert({ ...req.body, userId: tmp.userId }, companySchema)
     db.collection(cie).findOneAndUpdate({ _id: ObjectID(_id) }, { $set: tmp }, { upsert: false }, (err) => {
       if (err) {
         log.warn({ fnct: 'Put Old Company', error: err }, 'Error in the POST');

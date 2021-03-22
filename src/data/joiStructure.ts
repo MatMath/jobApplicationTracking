@@ -18,7 +18,7 @@ export const analyticTitleSchema = Joi.object({
 
 export const companySchema = Joi.object({
   _id: Joi.string(),
-  email: Joi.string().required(),
+  userId: Joi.string().required(),
   name: Joi.string().required(),
   location: Joi.string().required(),
   gps: gpsSchema,
@@ -28,7 +28,7 @@ export const companySchema = Joi.object({
 
 export const recruitersInfoSchema = Joi.object({
   _id: Joi.string(),
-  email: Joi.string().required(),
+  userId: Joi.string().required(),
   cie: Joi.string().required(),
   name: Joi.string().required(),
   notes: Joi.string().allow('').allow(null),
@@ -44,7 +44,7 @@ export const meetingInfoSchema = Joi.object({
 
 export const globalStructureSchema = Joi.object({
   _id: Joi.string(),
-  email: Joi.string().required(),
+  userId: Joi.string().required(),
   location: Joi.string().required(),
   website: Joi.string().allow('').allow(null),
   applicationType: Joi.string().allow('').allow(null),

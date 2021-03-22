@@ -11,7 +11,7 @@ export const applicationType = ['Recruiters', 'Direct'];
 const company:Company = {
   _id: undefined,
   name: null,
-  email: null,
+  userId: null,
   location: null,
   gps: {
     type: 'Feature',
@@ -30,14 +30,14 @@ const company:Company = {
 export const recruitersInfo:RecruitersInfo  = {
   _id: undefined,
   cie: '',
-  email: '',
+  userId: '',
   name: '',
   notes: undefined,
 };
 
 export const globalStructure: GlobalStructure = {
   _id: undefined,
-  email: '',
+  userId: '',
   location: '',
   website: '',
   applicationType: null,

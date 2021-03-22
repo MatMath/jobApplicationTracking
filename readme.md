@@ -46,14 +46,14 @@ Or use the Compass UI to create each collection manually.
 - $ npm start
 Now the server is running & serving the login page & dist folder when Authenticated (angular App)
 To run the server & the Angular App separately (without building/copying every time)
-- `$ USER_EMAIL=wonderful.person.email@gmail.com npm run start-dev`; // Add your email that have value in the DB.
+- `$ USER=1234567 npm run start-dev`; // Add your personalID that have value in the DB.
 
 ## Running the tests
 `$ npm test`
 
 ### Flow:
 Login via passport -> Get the Data -> Store user data into a User Container of MongoDB.
-Get the User (Cie, Recru, List) name from his profile. (Based on the parsed email?)
+Get the User (Cie, Recru, List) name from his profile. (Based on the parsed Google ID)
 
 Option on the DB:
 - CRUD new Company

@@ -48,20 +48,20 @@ describe('Testing the flow', function bob() {
       ...company,
       name: 'NoWhere',
       location: 'Everywhere',
-      email: 'test',
+      userId: 'test',
     };
     const recru = {
       ...recruitersInfo,
       cie: 'Annoying',
       name: 'spamming bot',
-      email: 'test',
+      userId: 'test',
     };
     const list = {
       ...globalStructure,
       ...titleLoc,
       company: 'string1',
       recruiters: 'string2',
-      email: 'test',
+      userId: 'test',
     };
     Joi.assert(cie, companySchema);
     Joi.assert(recru, recruitersInfoSchema);

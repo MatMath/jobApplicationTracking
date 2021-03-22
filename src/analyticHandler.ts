@@ -29,7 +29,7 @@ analyticHandler.get('/website', (req, res) => {
       {
         $match: {
           application: true,
-          email: req.user.email,
+          userId: req.user.userId,
         },
       },
       {
@@ -50,7 +50,7 @@ analyticHandler.get('/title', (req, res) => {
       {
         $match: {
           application: true,
-          email: req.user.email,
+          userId: req.user.userId,
         },
       },
       {

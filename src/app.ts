@@ -9,6 +9,7 @@ const GoogleStrategy = require ('passport-google-oauth2').Strategy;
 const cookieParser = require('cookie-parser');
 // Tmp until I understand and then store it in Mongo Directly
 const session = require('express-session');
+import {UserDetails} from './data/types'
 
 // custom libs
 import { log, getBunyanLog } from './logs';
@@ -58,16 +59,15 @@ passport.use('google', new GoogleStrategy(
     passReqToCallback: true,
   },
   (request, accessToken, refreshToken, profile, done) => {
+    console.log('PROFILE Back: ', profile);
     process.nextTick(() => done(null, profile));
   },
 ));
 
 passport.use('local', new LocalStrategy((username, password, done) => {
   const user = {
-    provider: 'local-login',
-    displayName: 'Demo User',
-    email: 'demouser@example.com',
-    gender: 'unknown',
+    id: 'Demo User',
+    displayName: 'Demo User'
   };
   return done(null, user);
 }));
@@ -93,7 +93,7 @@ app.get('/login', (req, res) => {
   res.render('login', { user: req.user });
 });
 app.get('/auth/google', passport.authenticate('google', {
-  scope: ['https://www.googleapis.com/auth/plus.profile.emails.read'],
+  scope: ['openid', 'profile'],
 }));
 app.get('/auth/google/callback', passport.authenticate('google', {
   successRedirect: '/',
@@ -135,14 +135,14 @@ app.use(genericErrorHandling);
 
 function ensureAuthenticated(req, res, next) {
   if (process.env.NODE_ENV === 'test') {
-    req.user = { email: 'testuser@gmail.com' };
+    req.user = { userId: 'testuser@gmail.com', displayName: 'testuser' }
     return next();
   }
-  if (process.env.NODE_ENV === 'dev' && process.env.USER_EMAIL) {
-    req.user = { email: process.env.USER_EMAIL };
+  if (process.env.NODE_ENV === 'dev' && process.env.USER) {
+    req.user = { userId: process.env.USER };
     return next();
   }
-  if (req.isAuthenticated()) { return next(); }
+  if (req.isAuthenticated() && req.user && req.user.userId) { return next(); }
   log.info({ fnct: 'ensureAuthenticated' }, 'REROUTE Login');
   return res.redirect('/login');
 }
