@@ -1,3 +1,6 @@
+> **Superseded by [PLAN.md](PLAN.md)** (v2), which restores the data model from
+> `jobApplicationTracking_old`. Kept here as the original input for reference.
+
 # Job Application Tracker — Build Spec
 
 ## Overview
