@@ -13,10 +13,15 @@ data model.
 ## Setup
 
 1. In the Supabase SQL editor, run [`supabase/bootstrap.sql`](supabase/bootstrap.sql).
-   Creates all tables, indexes, the `updated_at` trigger, and the RLS policies.
-   This step needs no Node and is safe to re-run.
-2. `cp .env.example .env` and fill in all four values.
-3. Then:
+   Creates all tables, indexes, the `updated_at` trigger, the `profiles`
+   provisioning trigger, and the RLS policies. Safe to re-run.
+   (An already-provisioned database instead needs only
+   [`supabase/002_profiles.sql`](supabase/002_profiles.sql).)
+2. Enable Google in Authentication → Sign In / Providers, using a Client ID and
+   Secret from Google Cloud Console. Sign-in is Google-only; there is no
+   password path.
+3. `cp .env.example .env` and fill in the values.
+4. Then:
 
 ```bash
 npm install

@@ -37,13 +37,18 @@ covered by v1's dashboard spec — no gap there.
 1. **Row Level Security was never mentioned.** The old app filtered `userId` on
    every query by hand. The Postgres equivalent is RLS, and its absence in a
    Supabase app is a live data-leak risk. Specified below, and non-optional.
-2. **Auth: Supabase Auth** *(v1's original choice, restored).* v2 briefly
-   proposed Auth.js to decouple local dev from a hosted service. Connecting
-   directly to Supabase removes that motivation and reverses the trade-off:
-   RLS policies compare `user_id` against `auth.uid()`, and that function only
-   resolves for a Supabase-issued JWT. Under Auth.js it returns null, every
-   policy denies every row, and the security model has to be rebuilt in the
-   application layer. Supabase Auth is what makes the database enforce ownership.
+2. **Auth: Supabase Auth, Google SSO only.** v1 planned email/password
+   alongside Google; v2 drops passwords entirely. Nothing to phish, leak, hash,
+   reset, or store, and account recovery becomes Google's problem. RLS also
+   depends on this: policies compare `user_id` against `auth.uid()`, which only
+   resolves for a Supabase-issued JWT.
+
+   New users are provisioned by an `on auth.users` database trigger that writes
+   a `profiles` row inside the same transaction that creates the auth user, so a
+   signed-in user always has one — there is no window where the app holds a
+   session without a profile. The old system did this at the application layer
+   in passport's `serializeUser`; a trigger is the version a second sign-in path
+   cannot bypass.
 
 3. **Unresolved choices, now decided** (a plan that says "A or B" defers work):
    - **Data fetching:** React Server Components for reads, Server Actions for
@@ -61,7 +66,7 @@ covered by v1's dashboard spec — no gap there.
 | Framework | Next.js (App Router) + TypeScript |
 | Styling/UI | Tailwind CSS + shadcn/ui |
 | Database | Supabase Postgres (single hosted project) |
-| Auth | Supabase Auth (email/password + Google OAuth) |
+| Auth | Supabase Auth — Google SSO only, no passwords |
 | ORM | Drizzle |
 | File storage | Supabase Storage |
 | Hosting | Vercel |

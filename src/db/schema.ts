@@ -80,6 +80,27 @@ export const authUsers = pgSchema('auth').table('users', {
 });
 
 /**
+ * One row per user, created automatically by an `on auth.users` trigger the
+ * first time someone signs in. Supabase keeps identity in `auth.users`, which
+ * application code cannot join against or extend; this mirrors the parts we
+ * need (display name, avatar from the Google profile) into a table we own, and
+ * gives user-level preferences somewhere to live later.
+ *
+ * The old system did the same thing at the application layer, writing a user
+ * document on every login via passport's serializeUser. A database trigger is
+ * the equivalent that cannot be bypassed by a second sign-in path.
+ */
+export const profiles = pgTable('profiles', {
+  id: uuid('id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  email: text('email'),
+  fullName: text('full_name'),
+  avatarUrl: text('avatar_url'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
  * Companies. Normalized rather than free text on the application: the dashboard
  * groups by company, and "Shopify" / "shopify " / "Shopify Inc" would otherwise
  * split one company's stats across three rows.
