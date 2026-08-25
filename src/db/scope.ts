@@ -30,13 +30,15 @@ export type OwnedTable = keyof typeof OWNED_TABLES;
  * Builds the ownership predicate for a table, optionally AND-ed with more
  * conditions.
  *
- * In production on Supabase, Postgres RLS (`user_id = auth.uid()`) is the real
- * enforcement boundary. This is the belt to that suspenders, and the *only*
- * enforcement when running against local Postgres, which has no `auth.uid()`.
- * Route handlers must build every query through this rather than writing a bare
- * `where`, so that forgetting the user predicate is impossible instead of merely
- * unlikely — the old system hand-wrote `{ userId: req.user.userId }` on each
- * query, and one omission there silently leaked another user's rows.
+ * Requests made through the Supabase client are constrained by RLS. This helper
+ * covers the other path: Drizzle connects over DATABASE_URL as the table owner,
+ * which **bypasses RLS entirely**, so for dashboard aggregation the predicate
+ * below is the only thing standing between users' data.
+ *
+ * Every such query must be built through this rather than a bare `where`, so
+ * that omitting the user predicate is impossible instead of merely unlikely —
+ * the old system hand-wrote `{ userId: req.user.userId }` on each query, and one
+ * omission there silently leaked another user's rows.
  */
 export function ownedBy(
   table: OwnedTable,

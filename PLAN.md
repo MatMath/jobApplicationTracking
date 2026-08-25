@@ -37,12 +37,14 @@ covered by v1's dashboard spec — no gap there.
 1. **Row Level Security was never mentioned.** The old app filtered `userId` on
    every query by hand. The Postgres equivalent is RLS, and its absence in a
    Supabase app is a live data-leak risk. Specified below, and non-optional.
-2. **Auth: Supabase Auth → Auth.js (NextAuth).** ⚠️ *Deviation from v1 — veto if
-   you disagree.* Supabase Auth couples local dev to a hosted service. Auth.js
-   with Google OAuth + a Drizzle adapter runs identically against local Postgres
-   and prod, mirrors the old passport `google-oauth2` + local-demo-strategy setup,
-   and demotes Supabase to "hosted Postgres + object storage" — swappable for any
-   Postgres. Cost: we own session handling rather than renting it.
+2. **Auth: Supabase Auth** *(v1's original choice, restored).* v2 briefly
+   proposed Auth.js to decouple local dev from a hosted service. Connecting
+   directly to Supabase removes that motivation and reverses the trade-off:
+   RLS policies compare `user_id` against `auth.uid()`, and that function only
+   resolves for a Supabase-issued JWT. Under Auth.js it returns null, every
+   policy denies every row, and the security model has to be rebuilt in the
+   application layer. Supabase Auth is what makes the database enforce ownership.
+
 3. **Unresolved choices, now decided** (a plan that says "A or B" defers work):
    - **Data fetching:** React Server Components for reads, Server Actions for
      writes. TanStack Query *only* on the kanban board, where optimistic drag
@@ -58,10 +60,10 @@ covered by v1's dashboard spec — no gap there.
 |---|---|
 | Framework | Next.js (App Router) + TypeScript |
 | Styling/UI | Tailwind CSS + shadcn/ui |
-| Database | Postgres — Docker locally, Supabase in prod |
-| Auth | Auth.js (Google OAuth + dev credential stub) |
+| Database | Supabase Postgres (single hosted project) |
+| Auth | Supabase Auth (email/password + Google OAuth) |
 | ORM | Drizzle |
-| File storage | Local disk in dev, Supabase Storage in prod (behind one interface) |
+| File storage | Supabase Storage |
 | Hosting | Vercel |
 | Data fetching | RSC + Server Actions; TanStack Query on the board only |
 | Charts | Recharts |
@@ -259,57 +261,69 @@ on `applications`; `application_id` on all children.
 
 ### Row Level Security
 
-Not optional. For each table, with Supabase:
+Not optional, and now the primary enforcement boundary rather than a second layer.
+The publishable key ships to the browser, so without RLS any authenticated user
+could read every other user's rows. Applied to all seven tables by
+`supabase/bootstrap.sql`:
 
 ```sql
-alter table applications enable row level security;
-create policy owner_all on applications
-  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+alter table public.applications enable row level security;
+create policy owner_all on public.applications for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 ```
 
-Locally (no `auth.uid()`), the same isolation is enforced in the data-access layer:
-every query is built through a helper that requires a `userId` and injects the
-predicate, so no route can accidentally omit it. Tests assert cross-user reads
-return nothing.
+`(select auth.uid())` rather than a bare `auth.uid()` is deliberate: the wrapped
+form is evaluated once per query instead of once per row, which matters on the
+dashboard's aggregate scans.
 
----
+Queries that go through `DATABASE_URL` (Drizzle, for dashboard aggregation)
+connect as the table owner and **bypass RLS**. Those paths must scope by user in
+the query itself, which is what `src/db/scope.ts` enforces — the old system
+hand-wrote `{ userId: req.user.userId }` on every query, and a single omission
+there would have leaked another user's rows.
 
-## Local Development
+Tests assert that a second user's rows are invisible through both paths.
 
-Postgres in Docker; the connection string is the only thing that changes for prod.
+## Development Setup
 
-```yaml
-# docker-compose.yml
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jobtracker
-    ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
-volumes: { pgdata: }
-```
+One Supabase project serves both development and production. There is no local
+database and no Docker.
 
-`DEV_USER_ID=<uuid> npm run dev` bypasses OAuth with a stub session — the same
-trick the old app used with `USER=1234567 npm run start-dev`. Guarded so it is
-inert unless `NODE_ENV=development`.
+1. Create the project at <https://supabase.com/dashboard>.
+2. Run `supabase/bootstrap.sql` in the SQL editor — creates every table, index,
+   the `updated_at` trigger, and the RLS policies.
+3. Fill `.env` (see `.env.example`): project URL, publishable key, secret key,
+   and `DATABASE_URL` from Settings → Database → Connection string.
+4. `npm install && npm run dev`.
 
-### Prerequisites (not currently installed on this machine)
-- **Node.js 20+** — nothing can be scaffolded, installed, or run without it
-- **Docker Desktop or OrbStack** — for the local Postgres above
+`supabase/bootstrap.sql` is hand-written to mirror `src/db/schema.ts` because
+`drizzle-kit` needs Node. Once Node is installed, `npm run db:push` diffs the two;
+a no-op result confirms they agree, and from then on Drizzle owns migrations.
 
----
+**Two keys, two jobs.** The publishable key is browser-safe and fully subject to
+RLS. The secret key bypasses RLS entirely — it stays server-side, is never
+imported into a client component, and is not prefixed `NEXT_PUBLIC_`.
+
+**A caveat worth stating plainly:** with a single shared project, development
+writes land in the same database as real data. Before this holds anything you
+care about, add a second Supabase project for production and point `.env` at the
+dev one. Cheap now, painful later.
+
+### Prerequisites
+- **Node.js 20+** — not currently installed; nothing can be installed or run
+  without it. The bootstrap SQL is the one step that works without it.
 
 ## Build Order
 
 Each step ends in a commit.
 
-1. **Scaffold** — Next.js + TS + Tailwind + shadcn/ui, `docker-compose.yml`,
-   `.env.example`, Drizzle config
+1. **Scaffold** — Next.js + TS + Tailwind + shadcn/ui, `.env.example`,
+   Drizzle config, `supabase/bootstrap.sql`
 2. **Schema + migrations** — all tables above, indexes, seed script with
    realistic fake data (so the dashboard has something to show from day one)
-3. **Auth** — Auth.js Google provider + dev stub, protected route group
+3. **Auth** — Supabase Auth via `@supabase/ssr`, middleware session refresh,
+   protected route group
 4. **Companies + contacts CRUD** — needed before applications can reference them
 5. **Application CRUD** — full form, autocomplete off distinct existing values
 6. **Kanban board** — drag-to-update-status, writing `status_history` and

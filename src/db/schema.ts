@@ -2,6 +2,7 @@ import {
   doublePrecision,
   index,
   integer,
+  pgSchema,
   pgTable,
   text,
   timestamp,
@@ -65,42 +66,17 @@ export type ContactKind = (typeof CONTACT_KINDS)[number];
 export type MeetingPurpose = (typeof MEETING_PURPOSES)[number];
 
 /**
- * Auth.js tables. Owned by @auth/drizzle-adapter; shapes are dictated by it.
+ * Supabase Auth owns `auth.users` — it is created and managed by the platform,
+ * not by our migrations. Declaring it here only gives Drizzle something to point
+ * foreign keys at; `db:generate` must never emit DDL for it.
+ *
+ * This is also what makes RLS work: policies compare `user_id` against
+ * `auth.uid()`, which Supabase derives from the request's JWT. That function
+ * only returns a value for a Supabase-issued session, which is why the app uses
+ * Supabase Auth rather than a separate auth library.
  */
-export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  emailVerified: timestamp('email_verified', { mode: 'date' }),
-  image: text('image'),
-});
-
-export const accounts = pgTable(
-  'accounts',
-  {
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    type: text('type').notNull(),
-    provider: text('provider').notNull(),
-    providerAccountId: text('provider_account_id').notNull(),
-    refreshToken: text('refresh_token'),
-    accessToken: text('access_token'),
-    expiresAt: integer('expires_at'),
-    tokenType: text('token_type'),
-    scope: text('scope'),
-    idToken: text('id_token'),
-    sessionState: text('session_state'),
-  },
-  (t) => [unique('accounts_provider_unique').on(t.provider, t.providerAccountId)],
-);
-
-export const sessions = pgTable('sessions', {
-  sessionToken: text('session_token').primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires', { mode: 'date' }).notNull(),
+export const authUsers = pgSchema('auth').table('users', {
+  id: uuid('id').primaryKey(),
 });
 
 /**
@@ -114,7 +90,7 @@ export const companies = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     location: text('location'),
     // Phase 2 map view. The old system stored a full GeoJSON Feature per company;
@@ -123,7 +99,7 @@ export const companies = pgTable(
     lng: doublePrecision('lng'),
     website: text('website'),
     notes: text('notes'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     unique('companies_user_name_unique').on(t.userId, t.name),
@@ -142,7 +118,7 @@ export const contacts = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     kind: text('kind').$type<ContactKind>().default('recruiter'),
     // The old `cie` field: the agency a recruiter works *for*, which is usually
@@ -154,7 +130,7 @@ export const contacts = pgTable(
     email: text('email'),
     phone: text('phone'),
     notes: text('notes'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index('contacts_user_idx').on(t.userId)],
 );
@@ -165,7 +141,7 @@ export const applications = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     companyId: uuid('company_id')
       .notNull()
       .references(() => companies.id, { onDelete: 'restrict' }),
@@ -194,13 +170,13 @@ export const applications = pgTable(
     status: text('status').$type<Status>().notNull().default('wishlist'),
     outcome: text('outcome').$type<Outcome>(),
     rejectionReason: text('rejection_reason'),
-    appliedAt: timestamp('applied_at'),
+    appliedAt: timestamp('applied_at', { withTimezone: true }),
     // Explicit rather than derived. A rejection is a response, so inferring this
     // from "reached an advanced status" would undercount and skew time-to-reply.
-    firstResponseAt: timestamp('first_response_at'),
-    closedAt: timestamp('closed_at'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    firstResponseAt: timestamp('first_response_at', { withTimezone: true }),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index('applications_user_idx').on(t.userId),
@@ -221,11 +197,11 @@ export const meetings = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     applicationId: uuid('application_id')
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
-    scheduledAt: timestamp('scheduled_at'),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     purpose: text('purpose').$type<MeetingPurpose>(),
     // Free text rather than a join to `contacts`: requiring a contact record for
     // every interviewer is enough friction that the field stops getting filled.
@@ -233,7 +209,7 @@ export const meetings = pgTable(
     challenge: text('challenge'),
     outcome: text('outcome').$type<(typeof MEETING_OUTCOMES)[number]>().default('pending'),
     notes: text('notes'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index('meetings_user_idx').on(t.userId),
@@ -248,12 +224,12 @@ export const statusHistory = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     applicationId: uuid('application_id')
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
     status: text('status').$type<Status>().notNull(),
-    changedAt: timestamp('changed_at').defaultNow().notNull(),
+    changedAt: timestamp('changed_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index('status_history_user_idx').on(t.userId),
@@ -267,12 +243,12 @@ export const notes = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     applicationId: uuid('application_id')
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index('notes_application_idx').on(t.applicationId)],
 );
@@ -283,14 +259,14 @@ export const documents = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     applicationId: uuid('application_id')
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
     fileName: text('file_name').notNull(),
     fileUrl: text('file_url').notNull(),
     type: text('type').$type<(typeof DOCUMENT_TYPES)[number]>(),
-    uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index('documents_application_idx').on(t.applicationId)],
 );

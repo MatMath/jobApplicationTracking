@@ -7,33 +7,35 @@ data model.
 
 ## Prerequisites
 
-Neither is currently installed on this machine:
-
-- **Node.js 20+** — <https://nodejs.org> (or via `nvm`)
-- **Docker Desktop** or **OrbStack** — for local Postgres
+- **Node.js 20+** — <https://nodejs.org> (or via `nvm`). Not currently installed.
+- A **Supabase project** — <https://supabase.com/dashboard>
 
 ## Setup
 
+1. In the Supabase SQL editor, run [`supabase/bootstrap.sql`](supabase/bootstrap.sql).
+   Creates all tables, indexes, the `updated_at` trigger, and the RLS policies.
+   This step needs no Node and is safe to re-run.
+2. `cp .env.example .env` and fill in all four values.
+3. Then:
+
 ```bash
-cp .env.example .env      # then fill in AUTH_SECRET
 npm install
-npm run db:up             # starts Postgres on :5432
-npm run db:generate       # generate SQL from src/db/schema.ts
-npm run db:migrate        # apply it
+npm run db:push   # confirms schema.ts and the live DB agree (expect no changes)
 npm run dev
 ```
 
-To skip Google OAuth during development, set `DEV_USER_ID` in `.env` to a user
-row's uuid. It is ignored unless `NODE_ENV=development`.
+The publishable key is browser-safe and bound by RLS. The secret key bypasses
+RLS — keep it server-side and never prefix it `NEXT_PUBLIC_`.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `src/db/schema.ts` | Single source of truth for the data model |
-| `src/db/scope.ts` | Ownership predicate — every user query goes through it |
+| `src/db/scope.ts` | Ownership predicate for Drizzle queries, which bypass RLS |
+| `supabase/bootstrap.sql` | One-time DDL + RLS, mirrors `schema.ts` |
 | `src/db/index.ts` | Drizzle client |
-| `drizzle/` | Generated migrations — commit these, never edit them |
+| `drizzle/` | Generated migrations once Node is available — commit, never edit |
 
 ## Prior art
 
