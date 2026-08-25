@@ -24,6 +24,11 @@ npm run db:push   # confirms schema.ts and the live DB agree (expect no changes)
 npm run dev
 ```
 
+Use `npm run build:check` rather than `npm run build` while the dev server is
+running. A plain build writes to the same `.next` the dev server serves from and
+corrupts its chunks, producing a blank page and a `__webpack_modules__[moduleId]
+is not a function` exception. `build:check` targets `.next-build` instead.
+
 The publishable key is browser-safe and bound by RLS. The secret key bypasses
 RLS — keep it server-side and never prefix it `NEXT_PUBLIC_`.
 
