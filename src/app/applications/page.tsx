@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { CompanyLogo } from '@/components/CompanyLogo';
 import {
   STATUS_LABELS,
   APPLICATION_TYPE_LABELS,
@@ -22,7 +23,7 @@ export default async function ApplicationsPage() {
 
   const { data, error } = await supabase
     .from('applications')
-    .select('*, companies (id, name)')
+    .select('*, companies (id, name, website)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -48,14 +49,21 @@ export default async function ApplicationsPage() {
 
   return (
     <main className="mx-auto max-w-4xl p-8">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Applications</h1>
-        <Link
-          href="/applications/new"
-          className="rounded bg-black px-3 py-2 text-sm text-white dark:bg-white dark:text-black"
-        >
-          Add application
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/applications/new"
+            className="rounded bg-black px-3 py-2 text-sm text-white dark:bg-white dark:text-black"
+          >
+            Add application
+          </Link>
+          {/* The root now redirects straight here, so sign-out lives on the
+              first page every signed-in user actually lands on. */}
+          <form action="/auth/signout" method="post">
+            <button className="text-sm underline opacity-60">Sign out</button>
+          </form>
+        </div>
       </div>
 
       {applications.length === 0 ? (
@@ -67,24 +75,34 @@ export default async function ApplicationsPage() {
           {applications.map((app) => {
             const salary = formatSalary(app);
             return (
-              <li key={app.id} className="py-3">
-                <div className="flex items-baseline justify-between gap-4">
-                  <div>
-                    <span className="font-medium">{app.role}</span>
-                    <span className="opacity-60"> · {app.companies?.name}</span>
-                  </div>
-                  <span className="shrink-0 rounded bg-black/5 px-2 py-0.5 text-xs dark:bg-white/10">
-                    {STATUS_LABELS[app.status] ?? app.status}
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-3 text-xs opacity-60">
-                  {app.location ? <span>{app.location}</span> : null}
-                  {app.platform_found ? <span>{app.platform_found}</span> : null}
-                  {app.application_type ? (
-                    <span>{APPLICATION_TYPE_LABELS[app.application_type]}</span>
+              <li key={app.id}>
+                <Link
+                  href={`/applications/${app.id}`}
+                  className="flex items-start gap-3 rounded py-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  {app.companies ? (
+                    <CompanyLogo company={app.companies} size={36} />
                   ) : null}
-                  {salary ? <span>{salary}</span> : null}
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <div className="truncate">
+                        <span className="font-medium">{app.role}</span>
+                        <span className="opacity-60"> · {app.companies?.name}</span>
+                      </div>
+                      <span className="shrink-0 rounded bg-black/5 px-2 py-0.5 text-xs dark:bg-white/10">
+                        {STATUS_LABELS[app.status] ?? app.status}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 text-xs opacity-60">
+                      {app.location ? <span>{app.location}</span> : null}
+                      {app.platform_found ? <span>{app.platform_found}</span> : null}
+                      {app.application_type ? (
+                        <span>{APPLICATION_TYPE_LABELS[app.application_type]}</span>
+                      ) : null}
+                      {salary ? <span>{salary}</span> : null}
+                    </div>
+                  </div>
+                </Link>
               </li>
             );
           })}

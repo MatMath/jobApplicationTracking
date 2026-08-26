@@ -51,6 +51,29 @@ export const APPLICATION_TYPE_LABELS: Record<string, string> = {
   direct: 'Direct',
 };
 
+export const OUTCOME_LABELS: Record<string, string> = {
+  accepted: 'Accepted offer',
+  declined: 'Declined offer',
+  rejected: 'Rejected by company',
+  withdrawn: 'Withdrew',
+  ghosted: 'Ghosted',
+};
+
+export const MEETING_PURPOSE_LABELS: Record<string, string> = {
+  phone_screen: 'Phone screen',
+  technical: 'Technical',
+  behavioral: 'Behavioural',
+  onsite: 'Onsite',
+  final: 'Final round',
+  other: 'Other',
+};
+
+export const MEETING_OUTCOME_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  passed: 'Passed',
+  failed: 'Did not pass',
+};
+
 export const REMOTE_LABELS: Record<string, string> = {
   remote: 'Remote',
   hybrid: 'Hybrid',
