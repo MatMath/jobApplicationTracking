@@ -17,9 +17,15 @@ data model.
    provisioning trigger, and the RLS policies. Safe to re-run.
    (An already-provisioned database instead needs only
    [`supabase/002_profiles.sql`](supabase/002_profiles.sql).)
-2. Enable Google in Authentication → Sign In / Providers, using a Client ID and
-   Secret from Google Cloud Console. Sign-in is Google-only; there is no
-   password path.
+2. In Authentication → Sign In / Providers: enable **Google** (Client ID and
+   Secret from Google Cloud Console, with
+   `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
+   redirect URI), and **disable Email**.
+
+   Disabling Email matters. Removing the password fields from the UI does not
+   remove the password path — while the Email provider is on, anyone can still
+   register straight against the Supabase API. SSO-only has to be enforced at
+   the provider, not the form.
 3. `cp .env.example .env` and fill in the values.
 4. Then:
 
