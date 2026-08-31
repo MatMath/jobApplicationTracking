@@ -55,6 +55,5 @@ RLS — keep it server-side and never prefix it `NEXT_PUBLIC_`.
 
 ## Prior art
 
-`../jobApplicationTracking_old` is the 2019-era version (Express + Mongo +
-Angular). Its data model is the reason this one tracks meetings, recruiters, and
+The 2019-era version (Express + Mongo + Angular). Its data model is the reason this one tracks meetings, recruiters, and
 recruiter-vs-direct sourcing; see the table at the top of [PLAN.md](PLAN.md).
