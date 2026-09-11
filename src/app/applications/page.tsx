@@ -19,7 +19,62 @@ function formatSalary(app: ApplicationWithCompany): string | null {
   return fmt((min ?? max)!);
 }
 
-export default async function ApplicationsPage() {
+/** Pseudo-filter for everything still alive: the view you usually want. */
+const ACTIVE = new Set(['applied', 'phone_screen', 'interview', 'offer']);
+
+function StatusFilter({
+  current,
+  counts,
+  total,
+  activeCount,
+}: {
+  current: string | null;
+  counts: Record<string, number>;
+  total: number;
+  activeCount: number;
+}) {
+  const chip = (key: string | null, label: string, n: number) => {
+    const selected = current === key;
+    return (
+      <Link
+        key={key ?? 'all'}
+        href={key ? { pathname: '/applications', query: { status: key } } : '/applications'}
+        aria-current={selected ? 'true' : undefined}
+        className={`rounded-full border px-3 py-1 text-xs ${
+          selected
+            ? 'border-transparent bg-black text-white dark:bg-white dark:text-black'
+            : 'border-black/15 opacity-70 hover:opacity-100 dark:border-white/15'
+        }`}
+      >
+        {label} <span className="tabular-nums opacity-60">{n}</span>
+      </Link>
+    );
+  };
+
+  return (
+    <nav aria-label="Filter by status" className="mt-6 flex flex-wrap gap-2">
+      {chip(null, 'All', total)}
+      {chip('active', 'Active', activeCount)}
+      {/* Only statuses that have something in them; an empty chip is a dead end. */}
+      {Object.entries(STATUS_LABELS)
+        .filter(([key]) => counts[key])
+        .map(([key, label]) => chip(key, label, counts[key]))}
+    </nav>
+  );
+}
+
+export default async function ApplicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status: requested } = await searchParams;
+  // Ignore anything that is not a real filter rather than showing an empty list.
+  const filter =
+    requested && (requested === 'active' || Object.hasOwn(STATUS_LABELS, requested))
+      ? requested
+      : null;
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -46,15 +101,38 @@ export default async function ApplicationsPage() {
     );
   }
 
-  const applications = (data ?? []) as unknown as ApplicationWithCompany[];
+  const all = (data ?? []) as unknown as ApplicationWithCompany[];
+
+  // One personal pipeline is tens to hundreds of rows: fetch once, count and
+  // filter in memory, and the chips always show true totals.
+  const counts: Record<string, number> = {};
+  for (const a of all) counts[a.status] = (counts[a.status] ?? 0) + 1;
+  const activeCount = all.filter((a) => ACTIVE.has(a.status)).length;
+
+  const applications = !filter
+    ? all
+    : filter === 'active'
+      ? all.filter((a) => ACTIVE.has(a.status))
+      : all.filter((a) => a.status === filter);
 
   return (
     <main className="mx-auto max-w-4xl p-8">
       <AppNav current="/applications" />
 
-      {applications.length === 0 ? (
+      {all.length > 0 ? (
+        <StatusFilter current={filter} counts={counts} total={all.length} activeCount={activeCount} />
+      ) : null}
+
+      {all.length === 0 ? (
         <p className="mt-8 text-sm opacity-60">
           Nothing tracked yet. Add your first application to get started.
+        </p>
+      ) : applications.length === 0 ? (
+        <p className="mt-8 text-sm opacity-60">
+          Nothing here right now.{' '}
+          <Link href="/applications" className="underline">
+            Show all
+          </Link>
         </p>
       ) : (
         <ul className="mt-6 divide-y divide-black/10 dark:divide-white/10">
