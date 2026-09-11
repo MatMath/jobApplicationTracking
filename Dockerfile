@@ -54,7 +54,10 @@ ENV NODE_ENV=production \
     PORT=8080 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup -S app && adduser -S app -G app
+# tzdata: the deploy sets TZ (see cloudbuild.yaml). Node's bundled ICU usually
+# resolves it alone, but date defaults and dashboard weeks depend on it, so the
+# system zone database is cheap insurance (~1.5 MB).
+RUN apk add --no-cache tzdata && addgroup -S app && adduser -S app -G app
 
 COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static

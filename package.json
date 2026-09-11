@@ -14,7 +14,8 @@
     "db:seed": "tsx src/db/seed.ts",
     "test": "vitest run",
     "db:push": "drizzle-kit push",
-    "build:check": "NEXT_DIST_DIR=.next-build next build"
+    "build:check": "NEXT_DIST_DIR=.next-build next build",
+    "deploy": "gcloud builds submit --config cloudbuild.yaml ."
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

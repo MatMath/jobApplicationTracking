@@ -1,0 +1,105 @@
+# Build the image, push it, deploy it to Cloud Run.
+#
+#   npm run deploy                                  # uses the defaults below
+#   npm run deploy -- --substitutions=_REGION=us-east4
+#
+# One-time project setup: scripts/gcp/setup.sh. Secrets: scripts/gcp/secrets.sh
+# or the console. See README "Deploy".
+#
+# Configuration comes from Secret Manager, fetched natively by Cloud Build
+# (availableSecrets below). Values exist only as env vars inside the build step
+# that declares them - never in this file, the trigger, or the build log.
+#
+# The running service is given NO secrets. Everything the app reads is
+# NEXT_PUBLIC_*, inlined at build time. The Supabase secret key and the
+# database URL bypass RLS and are deliberately absent from GCP.
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    secretEnv:
+      - NEXT_PUBLIC_SUPABASE_URL
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      - NEXT_PUBLIC_LOGO_DEV_TOKEN
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        # A trailing newline in a secret (easy to add with `echo x | gcloud
+        # secrets create`) would be inlined into the bundle and break the URL
+        # or key in ways that are miserable to debug. Strip it here.
+        # Literal dollar signs in this script are doubled: Cloud Build
+        # substitutes over the whole string, comments included, and rejects
+        # references it does not know. A doubled sign is its escape.
+        clean() { printf '%s' "$$1" | tr -d '\r\n'; }
+        docker build \
+          --build-arg NEXT_PUBLIC_SUPABASE_URL="$$(clean "$$NEXT_PUBLIC_SUPABASE_URL")" \
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$$(clean "$$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")" \
+          --build-arg NEXT_PUBLIC_LOGO_DEV_TOKEN="$$(clean "$$NEXT_PUBLIC_LOGO_DEV_TOKEN")" \
+          --build-arg NEXT_PUBLIC_SITE_URL="${_SITE_URL}" \
+          --tag "${_IMAGE}:${BUILD_ID}" \
+          --tag "${_IMAGE}:latest" \
+          .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, --all-tags, "${_IMAGE}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_IMAGE}:${BUILD_ID}
+      - --region=${_REGION}
+      # A dedicated identity with no roles: the app calls no Google APIs, so the
+      # container gets no credentials worth stealing.
+      - --service-account=${_RUNTIME_SA}
+      - --allow-unauthenticated
+      - --port=8080
+      # Cloud Run runs in UTC. Without this, "today" in the date-applied
+      # default is tomorrow every evening in Montreal, and week buckets on the
+      # dashboard shift. Set to the zone the user lives in.
+      - --set-env-vars=TZ=${_TZ}
+      - --cpu=1
+      - --memory=512Mi
+      # Scale to zero: a personal tracker idles most of the day and costs
+      # nothing while it does. The first request after idle pays a cold start.
+      - --min-instances=0
+      - --max-instances=2
+      - --cpu-boost
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_ID}/secrets/NEXT_PUBLIC_SUPABASE_URL/versions/latest
+      env: NEXT_PUBLIC_SUPABASE_URL
+    - versionName: projects/${PROJECT_ID}/secrets/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/versions/latest
+      env: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    - versionName: projects/${PROJECT_ID}/secrets/NEXT_PUBLIC_LOGO_DEV_TOKEN/versions/latest
+      env: NEXT_PUBLIC_LOGO_DEV_TOKEN
+
+substitutions:
+  # Montreal. Put it in or near your Supabase project's region: every page
+  # load makes Supabase calls, and the distance is paid on each one.
+  _REGION: northamerica-northeast1
+  _SERVICE: job-tracker
+  _REPO: job-tracker
+  _TZ: America/Toronto
+  # Optional. Empty is fine: redirects fall back to the forwarded Host header,
+  # which Cloud Run sets. Set it once you have a custom domain.
+  _SITE_URL: ''
+  _IMAGE: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/web
+  _RUNTIME_SA: job-tracker-run@${PROJECT_ID}.iam.gserviceaccount.com
+
+# Builds run as a dedicated deployer identity holding only what this pipeline
+# needs (scripts/gcp/setup.sh), not the broad default Cloud Build account.
+serviceAccount: projects/${PROJECT_ID}/serviceAccounts/job-tracker-deployer@${PROJECT_ID}.iam.gserviceaccount.com
+
+options:
+  # _IMAGE and _RUNTIME_SA are built from other substitutions.
+  dynamicSubstitutions: true
+  # Required when a build runs as a user-specified service account.
+  logging: CLOUD_LOGGING_ONLY

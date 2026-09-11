@@ -69,7 +69,7 @@ covered by v1's dashboard spec — no gap there.
 | Auth | Supabase Auth — Google SSO only, no passwords |
 | ORM | Drizzle |
 | File storage | Supabase Storage |
-| Hosting | Vercel |
+| Hosting | Google Cloud Run (container from `Dockerfile`, deployed by Cloud Build) |
 | Data fetching | RSC + Server Actions; dashboard via one `security invoker` SQL function over RPC |
 | Charts | Recharts |
 | Tests | Vitest (unit + aggregation queries against a throwaway DB) |

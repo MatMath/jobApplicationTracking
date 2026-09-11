@@ -1,0 +1,13 @@
+# What `gcloud builds submit` uploads. .gitignore covers most of it; the .env
+# lines are repeated explicitly because uploading them would put the Supabase
+# secret key and database password into a Cloud Storage bucket.
+#!include:.gitignore
+.gcloudignore
+.git
+.claude
+.env
+.env.*
+!.env.example
+node_modules
+.next
+.next-build
