@@ -5,6 +5,7 @@ import { CompanyLogo } from '@/components/CompanyLogo';
 import { ApplicationForm } from '../ApplicationForm';
 import { updateApplication } from '../actions';
 import { MeetingSection } from './MeetingSection';
+import { DeleteApplicationButton } from './DeleteApplicationButton';
 import { todayISO, formatDate } from '@/lib/date';
 import { STATUS_LABELS, type MeetingRow } from '@/lib/types';
 
@@ -104,6 +105,13 @@ export default async function ApplicationDetailPage({
             }}
           />
         </div>
+      </section>
+
+      <section className="mt-12 border-t border-black/10 pt-6 dark:border-white/10">
+        <DeleteApplicationButton
+          id={id}
+          label={`${application.role} at ${company?.name ?? 'this company'}`}
+        />
       </section>
     </main>
   );

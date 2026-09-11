@@ -277,3 +277,21 @@ export async function addNote(
   revalidatePath(`/applications/${applicationId}`);
   return { error: null };
 }
+
+/**
+ * Deletes an application. Meetings, notes, status history, and documents go
+ * with it via ON DELETE CASCADE; the company row stays, since other
+ * applications may point at it and it keeps its website for the logo.
+ */
+export async function deleteApplication(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+
+  // RLS scopes the delete to the caller's own rows; another user's id simply
+  // matches nothing.
+  await supabase.from('applications').delete().eq('id', id);
+
+  revalidatePath('/applications');
+  redirect('/applications');
+}
