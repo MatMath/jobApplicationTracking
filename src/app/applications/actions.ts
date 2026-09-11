@@ -7,6 +7,12 @@ import { fromDateInput } from '@/lib/date';
 
 export type FormState = { error: string | null };
 
+/** Statuses that mean the company came back to us in some form. */
+const RESPONDED = new Set(['phone_screen', 'interview', 'offer', 'rejected']);
+
+/** Statuses that end the application's life. */
+const CLOSED = new Set(['rejected', 'withdrawn']);
+
 function optional(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? '').trim();
   return s === '' ? null : s;
@@ -104,6 +110,9 @@ export async function createApplication(
       applied_at:
         fromDateInput(appliedAt) ??
         (status !== 'wishlist' ? new Date().toISOString() : null),
+      // Created already past 'applied' (logging an older application that has
+      // since moved on) still means the company replied.
+      first_response_at: RESPONDED.has(status) ? new Date().toISOString() : null,
     })
     .select('id')
     .single();
@@ -119,11 +128,6 @@ export async function createApplication(
   redirect('/applications');
 }
 
-/** Statuses that mean the company came back to us in some form. */
-const RESPONDED = new Set(['phone_screen', 'interview', 'offer', 'rejected']);
-
-/** Statuses that end the application's life. */
-const CLOSED = new Set(['rejected', 'withdrawn']);
 
 export async function updateApplication(
   _prev: FormState,

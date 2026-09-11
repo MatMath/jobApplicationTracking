@@ -36,3 +36,17 @@ export function toDateInput(value: string | null | undefined): string | null {
   if (!value) return null;
   return new Date(value).toLocaleDateString('en-CA');
 }
+
+/**
+ * Postgres `date` values arrive as "2026-08-03". new Date() on that string is
+ * UTC midnight, which renders as Aug 2 anywhere west of UTC - so build the Date
+ * from local parts instead.
+ */
+export function parseDateOnly(value: string): Date {
+  const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function formatShortDate(value: string): string {
+  return parseDateOnly(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}

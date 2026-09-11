@@ -15,8 +15,9 @@ data model.
 1. In the Supabase SQL editor, run [`supabase/bootstrap.sql`](supabase/bootstrap.sql).
    Creates all tables, indexes, the `updated_at` trigger, the `profiles`
    provisioning trigger, and the RLS policies. Safe to re-run.
-   (An already-provisioned database instead needs only
-   [`supabase/002_profiles.sql`](supabase/002_profiles.sql).)
+   An already-provisioned database instead needs the numbered files it has
+   not yet run, in order: [`002_profiles.sql`](supabase/002_profiles.sql),
+   [`003_dashboard.sql`](supabase/003_dashboard.sql).
 2. In Authentication → Sign In / Providers: enable **Google** (Client ID and
    Secret from Google Cloud Console, with
    `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized

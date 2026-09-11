@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { CompanyLogo } from '@/components/CompanyLogo';
+import { AppNav } from '@/components/AppNav';
 import {
   STATUS_LABELS,
   APPLICATION_TYPE_LABELS,
@@ -49,22 +50,7 @@ export default async function ApplicationsPage() {
 
   return (
     <main className="mx-auto max-w-4xl p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Applications</h1>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/applications/new"
-            className="rounded bg-black px-3 py-2 text-sm text-white dark:bg-white dark:text-black"
-          >
-            Add application
-          </Link>
-          {/* The root now redirects straight here, so sign-out lives on the
-              first page every signed-in user actually lands on. */}
-          <form action="/auth/signout" method="post">
-            <button className="text-sm underline opacity-60">Sign out</button>
-          </form>
-        </div>
-      </div>
+      <AppNav current="/applications" />
 
       {applications.length === 0 ? (
         <p className="mt-8 text-sm opacity-60">

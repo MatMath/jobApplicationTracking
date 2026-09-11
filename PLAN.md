@@ -70,7 +70,7 @@ covered by v1's dashboard spec — no gap there.
 | ORM | Drizzle |
 | File storage | Supabase Storage |
 | Hosting | Vercel |
-| Data fetching | RSC + Server Actions; TanStack Query on the board only |
+| Data fetching | RSC + Server Actions; dashboard via one `security invoker` SQL function over RPC |
 | Charts | Recharts |
 | Tests | Vitest (unit + aggregation queries against a throwaway DB) |
 
@@ -81,6 +81,20 @@ covered by v1's dashboard spec — no gap there.
   custom `GROUP BY` aggregation.
 
 ---
+
+### Dashboard aggregation: SQL function over RPC, not Drizzle
+
+v2 planned Drizzle over `DATABASE_URL` for the dashboard. It ships instead as
+`public.dashboard_stats()` (`supabase/003_dashboard.sql`), called through the
+Supabase client. The GROUP BY work is still SQL; what changes is the security
+model. The function is `security invoker`, so RLS scopes every table it reads to
+the caller - no hand-written user predicate, and nothing to forget. A Drizzle
+connection authenticates as table owner and bypasses RLS, and would have put a
+database password into the production runtime for the sake of one page. It also
+connects to `db.<ref>.supabase.co`, which Supabase serves over IPv6 only.
+Production now needs no credential that can read another user's rows.
+
+Drizzle stays as the schema source of truth and for types.
 
 ## Core Features (MVP)
 

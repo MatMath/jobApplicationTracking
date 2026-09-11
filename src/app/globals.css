@@ -3,12 +3,25 @@
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+
+  /* Chart tokens. series-1 validated (dataviz validate_palette.js) against this
+     file's own surfaces: #2a78d6 on #ffffff, #3987e5 on #0a0a0a - all checks pass. */
+  --series-1: #2a78d6;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-cursor: rgba(11, 11, 11, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --series-1: #3987e5;
+    --viz-grid: #2c2c2a;
+    --viz-axis: #383835;
+    --viz-cursor: rgba(255, 255, 255, 0.05);
   }
 }
 
