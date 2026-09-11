@@ -3,7 +3,7 @@
 #
 #   gcloud auth login
 #   gcloud config set project <PROJECT_ID>
-#   ./scripts/gcp/setup.sh                        # or: REGION=us-east4 ./scripts/gcp/setup.sh
+#   ./scripts/gcp/setup.sh                        # or: PROJECT_ID=my-proj REGION=us-east4 ./scripts/gcp/setup.sh
 #
 # Creates: APIs, an Artifact Registry repo, two service accounts with the
 # narrowest roles the pipeline needs, and the three (empty) secrets. It does
@@ -18,6 +18,9 @@ RUNTIME="job-tracker-run@${PROJECT_ID}.iam.gserviceaccount.com"
 SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN)
 
 [ -n "$PROJECT_ID" ] || { echo "No project. Run: gcloud config set project <PROJECT_ID>" >&2; exit 1; }
+# Scope every gcloud call below to that project without touching the user's
+# gcloud config: PROJECT_ID=... works even with no default project set.
+export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
 ME="$(gcloud config get-value account 2>/dev/null)"
 echo "Project $PROJECT_ID, region $REGION, as $ME"
 

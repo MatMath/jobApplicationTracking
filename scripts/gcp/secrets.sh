@@ -3,13 +3,16 @@
 # Optional: creating them in the console works just as well.
 #
 #   ./scripts/gcp/secrets.sh            # reads ./.env
-#   ENV_FILE=.env.production ./scripts/gcp/secrets.sh
+#   ENV_FILE=.env.production PROJECT_ID=my-proj ./scripts/gcp/secrets.sh
 #
 # Rotate the keys first if they have ever been shared; this uploads whatever
 # the file currently holds.
 set -euo pipefail
 
 ENV_FILE="${ENV_FILE:-.env}"
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
+[ -n "$PROJECT_ID" ] || { echo "No project. Set PROJECT_ID or run: gcloud config set project <PROJECT_ID>" >&2; exit 1; }
+export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
 SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN)
 [ -f "$ENV_FILE" ] || { echo "No $ENV_FILE" >&2; exit 1; }
 
