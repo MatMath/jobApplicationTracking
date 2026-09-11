@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { redirectTo } from '@/lib/redirect';
 
 const PUBLIC_PATHS = ['/login', '/auth'];
 
@@ -41,17 +42,10 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  if (!user && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  if (user && pathname === '/login') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
-  }
+  // redirectTo, not nextUrl: behind Cloud Run nextUrl says localhost (see
+  // lib/origin.ts). `response` carries any session the refresh just set.
+  if (!user && !isPublic) return redirectTo(request, '/login', 307, response);
+  if (user && pathname === '/login') return redirectTo(request, '/', 307, response);
 
   return response;
 }
