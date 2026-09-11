@@ -1,0 +1,20 @@
+# Keep the build context small, and keep local secrets out of the image.
+#
+# The .env rules are load-bearing: `output: 'standalone'` copies any .env it
+# finds into the runtime folder, so without them the image would carry the
+# Supabase secret key and the database password. The Dockerfile also refuses to
+# build if one gets through.
+.env
+.env.*
+!.env.example
+
+node_modules
+.next
+.next-build
+.git
+.claude
+*.tsbuildinfo
+next-env.d.ts
+coverage
+Dockerfile
+.dockerignore
