@@ -295,3 +295,13 @@ export async function deleteApplication(formData: FormData): Promise<void> {
   revalidatePath('/applications');
   redirect('/applications');
 }
+
+export async function deleteNote(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const id = String(formData.get('note_id') ?? '');
+  const applicationId = String(formData.get('application_id') ?? '');
+  if (!id) return;
+
+  await supabase.from('notes').delete().eq('id', id);
+  revalidatePath(`/applications/${applicationId}`);
+}

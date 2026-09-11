@@ -6,6 +6,7 @@ import { ApplicationForm } from '../ApplicationForm';
 import { updateApplication } from '../actions';
 import { MeetingSection } from './MeetingSection';
 import { DeleteApplicationButton } from './DeleteApplicationButton';
+import { NotesSection, type NoteRow } from './NotesSection';
 import { todayISO, formatDate } from '@/lib/date';
 import { STATUS_LABELS, type MeetingRow } from '@/lib/types';
 
@@ -29,7 +30,7 @@ export default async function ApplicationDetailPage({
   // is the behaviour we want: no existence oracle.
   if (error || !application) notFound();
 
-  const [{ data: meetings }, { data: history }] = await Promise.all([
+  const [{ data: meetings }, { data: history }, { data: notes }] = await Promise.all([
     supabase
       .from('meetings')
       .select('*')
@@ -40,6 +41,11 @@ export default async function ApplicationDetailPage({
       .select('status, changed_at')
       .eq('application_id', id)
       .order('changed_at', { ascending: true }),
+    supabase
+      .from('notes')
+      .select('id, content, created_at')
+      .eq('application_id', id)
+      .order('created_at', { ascending: false }),
   ]);
 
   const company = application.companies as {
@@ -90,6 +96,8 @@ export default async function ApplicationDetailPage({
         applicationId={id}
         meetings={(meetings ?? []) as unknown as MeetingRow[]}
       />
+
+      <NotesSection applicationId={id} notes={(notes ?? []) as NoteRow[]} />
 
       <section className="mt-12">
         <h2 className="text-lg font-semibold">Details</h2>
