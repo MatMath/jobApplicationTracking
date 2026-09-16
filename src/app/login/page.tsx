@@ -15,9 +15,9 @@ function GoogleMark() {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center p-8">
@@ -38,6 +38,9 @@ export default async function LoginPage({
       ) : null}
 
       <form action={signInWithGoogle} className="mt-6">
+        {/* Where the middleware bounced them from, returned to the action so
+            it survives the round trip through Google. */}
+        <input type="hidden" name="next" value={next ?? ''} />
         <button
           type="submit"
           className="flex w-full items-center justify-center gap-3 rounded border border-black/20 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"

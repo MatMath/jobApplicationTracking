@@ -32,6 +32,9 @@ export function AppNav({ current }: { current: (typeof tabs)[number]['href'] }) 
         >
           Add application
         </Link>
+        <Link href="/settings/connections" className="text-sm underline opacity-60">
+          Connected apps
+        </Link>
         <form action="/auth/signout" method="post">
           <button className="text-sm underline opacity-60">Sign out</button>
         </form>
