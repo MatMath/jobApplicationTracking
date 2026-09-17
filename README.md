@@ -87,6 +87,68 @@ Defaults (region `northamerica-northeast1`, `TZ=America/Toronto`, scale to
 zero, max 2 instances) live in `cloudbuild.yaml` under `substitutions`. Put
 the region near your Supabase project's: every page load makes Supabase calls.
 
+## Connect Claude (MCP)
+
+The app exposes an MCP server at `/api/mcp`, so Claude can fill the tracker from
+a job posting: give it a URL and it reads the page itself, then calls
+`create_application` with the fields it extracted. It can also search, move an
+application along the pipeline, and add notes and interview rounds.
+
+Authorization is Supabase Auth's own OAuth 2.1 server, not something this app
+implements — Claude discovers it via `/.well-known/oauth-protected-resource`,
+you approve the connection once at `/oauth/consent`, and the access token it
+receives is an ordinary Supabase JWT. So the same RLS policies that scope the
+web UI scope the MCP tools, and the Cloud Run service still holds no secrets.
+
+**One-time Supabase setup** (Authentication → OAuth Server in the dashboard):
+
+1. Enable the OAuth 2.1 server.
+2. Set the authorization URL path to `/oauth/consent`.
+3. Enable **dynamic client registration**.
+
+Step 3 is what makes connecting a one-field operation. With it on, the client
+registers itself during discovery and the user pastes a URL and nothing else —
+no client id, no secret, no dashboard visit. With it off, every user has to be
+handed a client id out of band, which is not a thing you can ask of people.
+
+The cost is that anyone can register a client and name it whatever they like,
+so `client_name` on the consent screen proves nothing. That is handled where it
+has to be: the consent screen treats the name as an unverified claim and vouches
+for the redirect URI instead, warning plainly when the app is one it does not
+recognise (`src/lib/mcp/clients.ts`). Nothing is granted until a signed-in user
+approves it there.
+
+**In Claude**: Settings → Connectors → Add custom connector, and paste:
+
+```
+https://<your-service>/api/mcp
+```
+
+That is the whole setup. Claude reads `/.well-known/oauth-protected-resource`,
+finds Supabase, registers itself, and sends you to `/oauth/consent` to approve.
+Revoke any time at `/settings/connections`.
+
+<details>
+<summary>If you cannot enable dynamic client registration</summary>
+
+Register a client by hand and give its id to each user:
+
+```
+node scripts/supabase/register-oauth-client.mjs Claude
+```
+
+Needs `SUPABASE_SECRET_KEY` from `.env`. Its redirect URI list has to name every
+client surface up front, because Supabase matches redirect URIs exactly and does
+not accept wildcards — which is the other reason this does not scale.
+
+</details>
+
+Then: *"Add this job to my tracker: &lt;url&gt;"*.
+
+> Supabase builds the consent redirect from the project's Site URL, so point
+> that at your deployed origin (not `localhost:3000`) before connecting Claude
+> to the deployed app.
+
 ## Layout
 
 | Path | What |
@@ -96,6 +158,12 @@ the region near your Supabase project's: every page load makes Supabase calls.
 | `supabase/bootstrap.sql` | One-time DDL + RLS, mirrors `schema.ts` |
 | `src/db/index.ts` | Drizzle client |
 | `drizzle/` | Generated migrations once Node is available — commit, never edit |
+| `src/lib/applications/` | Validation and write logic, shared by the form and the MCP tools |
+| `src/lib/mcp/` | MCP tool definitions and bearer-token verification |
+| `src/app/api/mcp/route.ts` | The MCP endpoint |
+| `src/app/oauth/consent/` | Consent screen for Supabase's OAuth 2.1 server |
+| `src/lib/mcp/clients.ts` | Recognises OAuth clients at the consent screen |
+| `scripts/supabase/` | Manual OAuth client registration, if DCR is off |
 | `Dockerfile` | Three-stage build to a standalone Next server |
 | `cloudbuild.yaml` | Build, push, deploy; pulls config from Secret Manager |
 | `scripts/gcp/` | One-time project setup and secret upload |
