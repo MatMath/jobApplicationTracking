@@ -1,3 +1,6 @@
+import { headers } from 'next/headers';
+import { McpNote } from '@/components/McpCallout';
+import { publicOrigin } from '@/lib/origin';
 import { signInWithGoogle } from './actions';
 
 /** Google's mark. Inlined rather than fetched: the CSP blocks external assets. */
@@ -18,6 +21,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const { error, next } = await searchParams;
+  const origin = publicOrigin(await headers());
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center p-8">
@@ -54,6 +58,8 @@ export default async function LoginPage({
         Your account is created automatically on first sign-in. No password is
         stored by this app.
       </p>
+
+      <McpNote origin={origin} />
     </main>
   );
 }

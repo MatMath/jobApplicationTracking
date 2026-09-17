@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { McpGuide } from '@/components/McpCallout';
+import { publicOrigin } from '@/lib/origin';
 import { createClient } from '@/lib/supabase/server';
 import { formatDate } from '@/lib/date';
 import { revokeConnection } from './actions';
@@ -15,6 +18,7 @@ export const dynamic = 'force-dynamic';
 export default async function ConnectionsPage() {
   const supabase = await createClient();
   const { data: grants, error } = await supabase.auth.oauth.listGrants();
+  const origin = publicOrigin(await headers());
 
   return (
     <main className="mx-auto max-w-2xl p-6">
@@ -38,9 +42,8 @@ export default async function ConnectionsPage() {
       ) : null}
 
       {!error && (!grants || grants.length === 0) ? (
-        <p className="mt-6 rounded border border-black/15 p-4 text-sm opacity-70 dark:border-white/15">
-          Nothing is connected yet. Add this tracker as a custom connector in
-          Claude to get started.
+        <p className="mt-6 text-sm opacity-70">
+          Nothing is connected yet.
         </p>
       ) : null}
 
@@ -66,6 +69,10 @@ export default async function ConnectionsPage() {
           </li>
         ))}
       </ul>
+
+      <div className="mt-8">
+        <McpGuide origin={origin} />
+      </div>
     </main>
   );
 }

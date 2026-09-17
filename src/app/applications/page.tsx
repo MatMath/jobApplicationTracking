@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { McpPrompt } from '@/components/McpCallout';
+import { publicOrigin } from '@/lib/origin';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { AppNav } from '@/components/AppNav';
 import {
@@ -103,6 +106,12 @@ export default async function ApplicationsPage({
 
   const all = (data ?? []) as unknown as ApplicationWithCompany[];
 
+  // Only while nothing is connected. Failing closed on an error keeps a
+  // transient auth hiccup from putting a stray banner on the list.
+  const { data: grants } = await supabase.auth.oauth.listGrants();
+  const showMcpPrompt = grants !== null && grants.length === 0;
+  const origin = publicOrigin(await headers());
+
   // One personal pipeline is tens to hundreds of rows: fetch once, count and
   // filter in memory, and the chips always show true totals.
   const counts: Record<string, number> = {};
@@ -118,6 +127,7 @@ export default async function ApplicationsPage({
   return (
     <main className="mx-auto max-w-4xl p-8">
       <AppNav current="/applications" />
+      {showMcpPrompt ? <McpPrompt origin={origin} /> : null}
 
       {all.length > 0 ? (
         <StatusFilter current={filter} counts={counts} total={all.length} activeCount={activeCount} />
