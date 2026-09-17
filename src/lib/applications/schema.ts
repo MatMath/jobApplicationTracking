@@ -79,7 +79,7 @@ const optionalUrl = z.preprocess((v) => {
   return /^https?:\/\//i.test(s) ? s : `https://${s}`;
 }, z.url().nullable());
 
-export const applicationInput = z.object({
+const applicationFields = z.object({
   company: requiredText,
   companyWebsite: optionalUrl.default(null),
   role: requiredText,
@@ -89,6 +89,8 @@ export const applicationInput = z.object({
   platformFound: optionalText.default(null),
   platformApplied: optionalText.default(null),
   location: optionalText.default(null),
+  /** Google's place id, when the address came from a Places lookup. */
+  locationPlaceId: optionalText.default(null),
   remoteType: optionalEnum(REMOTE_TYPES).default(null),
   salaryMin: optionalInt.default(null),
   salaryMax: optionalInt.default(null),
@@ -98,12 +100,57 @@ export const applicationInput = z.object({
   appliedAt: optionalDate.default(null),
 });
 
-/** Editing carries the id and may close the application out. */
-export const applicationUpdateInput = applicationInput.extend({
-  id: z.uuid(),
-  outcome: optionalEnum(OUTCOMES).default(null),
-  rejectionReason: optionalText.default(null),
-});
+/**
+ * An office address is required unless the role is fully remote.
+ *
+ * Only `remote` excuses it — hybrid and onsite both mean showing up somewhere,
+ * and a blank arrangement means nobody has established that the job is remote.
+ * The rule is one-directional on purpose: a remote role may still record an
+ * address (a head office to visit quarterly is worth knowing, and a remote
+ * posting is often remote-within-a-region), it simply is not made to.
+ */
+function requireOfficeLocation<T extends { location: string | null; remoteType: string | null }>(
+  value: T,
+  ctx: z.RefinementCtx,
+): void {
+  if (value.location || value.remoteType === 'remote') return;
+  ctx.addIssue({
+    code: 'custom',
+    path: ['location'],
+    message: 'Where is the office? Required unless the role is fully remote.',
+  });
+}
+
+export const applicationInput = applicationFields.superRefine(requireOfficeLocation);
+
+/**
+ * Editing carries the id and may close the application out. Built from the
+ * field set rather than from `applicationInput` so the refinement applies to
+ * the extended shape too — extending a refined schema drops the refinement.
+ */
+export const applicationUpdateInput = applicationFields
+  .extend({
+    id: z.uuid(),
+    outcome: optionalEnum(OUTCOMES).default(null),
+    rejectionReason: optionalText.default(null),
+  })
+  .superRefine(requireOfficeLocation);
+
+/**
+ * Changing where the office is, without touching anything else. The form
+ * rewrites every column on save, which is right for a form and wrong for "that
+ * role is at their Toronto office, not Montreal".
+ */
+export const locationChangeInput = z
+  .object({
+    id: z.uuid(),
+    location: optionalText.default(null),
+    locationPlaceId: optionalText.default(null),
+  })
+  .refine((v) => v.location !== null || v.locationPlaceId !== null, {
+    path: ['location'],
+    message: 'Pass an address, a place id, or both.',
+  });
 
 /** Status-only move, for "I got a phone screen at Acme". */
 export const statusChangeInput = z.object({
@@ -142,6 +189,7 @@ export const applicationSearchInput = z.object({
 });
 
 export type ApplicationInput = z.infer<typeof applicationInput>;
+export type LocationChangeInput = z.infer<typeof locationChangeInput>;
 export type ApplicationUpdateInput = z.infer<typeof applicationUpdateInput>;
 export type StatusChangeInput = z.infer<typeof statusChangeInput>;
 export type NoteInput = z.infer<typeof noteInput>;

@@ -1,9 +1,12 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { AppNav } from '@/components/AppNav';
 import { rate, type DashboardStats } from '@/lib/dashboard';
+import { placesConfigured } from '@/lib/geo/places';
+import { loadOfficePins, type OfficePin } from '@/lib/geo/pins';
 import { APPLICATION_TYPE_LABELS } from '@/lib/types';
 import { PlatformChart, WeeklyChart } from './Charts';
+import { OfficeMap } from './OfficeMap';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +36,11 @@ export default async function DashboardPage() {
   // Weeks are bucketed in the server's zone. Locally that is yours; in
   // production the deploy sets TZ so it stays yours rather than UTC.
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const { data, error } = await supabase.rpc('dashboard_stats', { p_tz: tz });
+  const user = await getUser();
+  const [{ data, error }, pins] = await Promise.all([
+    supabase.rpc('dashboard_stats', { p_tz: tz }),
+    user ? loadOfficePins(supabase, user.id) : Promise.resolve<OfficePin[]>([]),
+  ]);
 
   if (error || !data) {
     return (
@@ -64,6 +71,13 @@ export default async function DashboardPage() {
         <Link href="/applications/new" className="mt-4 inline-block text-sm underline">
           Add an application
         </Link>
+
+        {/* Shown even here: a wishlist entry has an office before it has stats. */}
+        {pins.length > 0 ? (
+          <Section title="Where the jobs are" subtitle="Every application with an office address">
+            <OfficeMap pins={pins} configured={placesConfigured()} />
+          </Section>
+        ) : null}
       </main>
     );
   }
@@ -96,6 +110,10 @@ export default async function DashboardPage() {
           }
         />
       </div>
+
+      <Section title="Where the jobs are" subtitle="Every application with an office address">
+        <OfficeMap pins={pins} configured={placesConfigured()} />
+      </Section>
 
       <Section title="Applications per week" subtitle="Last 12 weeks, by date applied">
         <WeeklyChart data={s.weekly} />

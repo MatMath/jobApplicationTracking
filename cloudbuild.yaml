@@ -10,9 +10,18 @@
 # (availableSecrets below). Values exist only as env vars inside the build step
 # that declares them - never in this file, the trigger, or the build log.
 #
-# The running service is given NO secrets. Everything the app reads is
-# NEXT_PUBLIC_*, inlined at build time. The Supabase secret key and the
-# database URL bypass RLS and are deliberately absent from GCP.
+# Most of what the app reads is NEXT_PUBLIC_*, inlined at build time. That now
+# includes NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY, which is meant to be public: it
+# is restricted to the Maps JavaScript API and to this app's own domains, so the
+# worst a scraped copy can do is draw a map.
+#
+# GOOGLE_MAPS_API_KEY is the opposite and is mounted into the running service
+# instead. It can spend Places quota on geocoding, address lookup is called from
+# the server precisely so it never reaches a browser, and inlining it would undo
+# that. The two are deliberately different keys.
+#
+# The Supabase secret key and the database URL bypass RLS and are deliberately
+# absent from GCP.
 
 steps:
   - id: build
@@ -22,6 +31,7 @@ steps:
       - NEXT_PUBLIC_SUPABASE_URL
       - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
       - NEXT_PUBLIC_LOGO_DEV_TOKEN
+      - NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY
     args:
       - -c
       - |
@@ -37,6 +47,7 @@ steps:
           --build-arg NEXT_PUBLIC_SUPABASE_URL="$$(clean "$$NEXT_PUBLIC_SUPABASE_URL")" \
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$$(clean "$$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")" \
           --build-arg NEXT_PUBLIC_LOGO_DEV_TOKEN="$$(clean "$$NEXT_PUBLIC_LOGO_DEV_TOKEN")" \
+          --build-arg NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY="$$(clean "$$NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY")" \
           --build-arg NEXT_PUBLIC_SITE_URL="${_SITE_URL}" \
           --tag "${_IMAGE}:${BUILD_ID}" \
           --tag "${_IMAGE}:latest" \
@@ -55,8 +66,8 @@ steps:
       - ${_SERVICE}
       - --image=${_IMAGE}:${BUILD_ID}
       - --region=${_REGION}
-      # A dedicated identity with no roles: the app calls no Google APIs, so the
-      # container gets no credentials worth stealing.
+      # A dedicated identity whose only grant is reading the Maps key: the app
+      # calls Google with that key, not with this service account.
       - --service-account=${_RUNTIME_SA}
       - --allow-unauthenticated
       - --port=8080
@@ -64,6 +75,9 @@ steps:
       # default is tomorrow every evening in Montreal, and week buckets on the
       # dashboard shift. Set to the zone the user lives in.
       - --set-env-vars=TZ=${_TZ}
+      # Fetched from Secret Manager by the runtime identity at start-up, so a
+      # rotated key needs a new revision but not a rebuild.
+      - --set-secrets=GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest
       - --cpu=1
       - --memory=512Mi
       # Scale to zero: a personal tracker idles most of the day and costs
@@ -80,6 +94,8 @@ availableSecrets:
       env: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     - versionName: projects/${PROJECT_ID}/secrets/NEXT_PUBLIC_LOGO_DEV_TOKEN/versions/latest
       env: NEXT_PUBLIC_LOGO_DEV_TOKEN
+    - versionName: projects/${PROJECT_ID}/secrets/NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY/versions/latest
+      env: NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY
 
 substitutions:
   # Montreal. Put it in or near your Supabase project's region: every page

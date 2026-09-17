@@ -5,12 +5,19 @@ import { redirectTo } from '@/lib/redirect';
 /**
  * Paths the cookie check does not gate.
  *
- * /api/mcp and /.well-known are not unauthenticated: they authenticate by
- * OAuth bearer token inside the route (see lib/mcp/auth.ts). Running them
- * through the check here would answer an MCP client's JSON-RPC POST with a 307
- * to the sign-in page, which it cannot act on.
+ * Nothing here is unauthenticated; each of these checks the caller itself, and
+ * a redirect would only get in the way of an answer it can act on.
+ *
+ * /api/mcp and /.well-known authenticate by OAuth bearer token inside the route
+ * (see lib/mcp/auth.ts); running them through the cookie check would answer an
+ * MCP client's JSON-RPC POST with a 307 to the sign-in page.
+ *
+ * /api/places and /api/map are called by fetch() and <img> from pages that are
+ * already gated. They check the session themselves and answer 401, which the
+ * caller can tell apart from a real answer — a 307 to the sign-in page arrives
+ * at a `fetch` as a 200 full of HTML, and at an <img> as a broken image.
  */
-const PUBLIC_PATHS = ['/login', '/auth', '/api/mcp', '/.well-known'];
+const PUBLIC_PATHS = ['/login', '/auth', '/api/mcp', '/.well-known', '/api/places', '/api/map'];
 
 /**
  * Refreshes the auth token on every request and redirects signed-out users away

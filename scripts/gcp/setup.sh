@@ -15,7 +15,11 @@ REGION="${REGION:-northamerica-northeast1}"   # keep in sync with _REGION in clo
 REPO=job-tracker
 DEPLOYER="job-tracker-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 RUNTIME="job-tracker-run@${PROJECT_ID}.iam.gserviceaccount.com"
-SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN)
+# Read by the build, inlined into the bundle: the deployer needs these.
+BUILD_SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY)
+# Read by the running container, never by the browser: the runtime needs these.
+RUNTIME_SECRETS=(GOOGLE_MAPS_API_KEY)
+SECRETS=("${BUILD_SECRETS[@]}" "${RUNTIME_SECRETS[@]}")
 
 [ -n "$PROJECT_ID" ] || { echo "No project. Run: gcloud config set project <PROJECT_ID>" >&2; exit 1; }
 # Scope every gcloud call below to that project without touching the user's
@@ -38,8 +42,9 @@ make_sa() {
 }
 echo "- service accounts"
 make_sa job-tracker-deployer "Job tracker - Cloud Build deployer"
-# Deliberately granted nothing: the app calls no Google APIs.
-make_sa job-tracker-run "Job tracker - Cloud Run runtime (no roles)"
+# No project roles: the app calls Google Maps with an API key, not with this
+# identity. Its only grant is read access to the one runtime secret, below.
+make_sa job-tracker-run "Job tracker - Cloud Run runtime"
 
 echo "- deployer roles"
 # run.admin: deploy, and set the public invoker policy (--allow-unauthenticated).
@@ -56,13 +61,24 @@ gcloud iam service-accounts add-iam-policy-binding "$RUNTIME" \
 gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER" \
   --member="user:$ME" --role=roles/iam.serviceAccountUser >/dev/null
 
-echo "- secrets (created empty; the deployer can read these three and nothing else)"
+echo "- secrets (created empty; each identity can read only the ones it needs)"
 for s in "${SECRETS[@]}"; do
   gcloud secrets describe "$s" >/dev/null 2>&1 \
     || gcloud secrets create "$s" --replication-policy=automatic
+done
+for s in "${BUILD_SECRETS[@]}"; do
   gcloud secrets add-iam-policy-binding "$s" \
     --member="serviceAccount:$DEPLOYER" --role=roles/secretmanager.secretAccessor >/dev/null
 done
+# The Maps key is fetched by the container at request time, not baked into the
+# image, so it is the runtime identity that reads it - the deployer never sees it.
+for s in "${RUNTIME_SECRETS[@]}"; do
+  gcloud secrets add-iam-policy-binding "$s" \
+    --member="serviceAccount:$RUNTIME" --role=roles/secretmanager.secretAccessor >/dev/null
+done
+
+echo "- Maps Platform APIs (address lookup and the dashboard map)"
+gcloud services enable places.googleapis.com static-maps-backend.googleapis.com maps-backend.googleapis.com
 
 echo
 echo "Done. Next: give each secret a value (./scripts/gcp/secrets.sh, or the console),"

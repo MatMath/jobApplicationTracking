@@ -12,6 +12,7 @@ import {
   applicationInput,
   applicationSearchInput,
   formatIssues,
+  locationChangeInput,
   meetingInput,
   noteInput,
   statusChangeInput,
@@ -23,7 +24,9 @@ import {
   createApplication,
   getApplication,
   searchApplications,
+  setLocation,
 } from '@/lib/applications/write';
+import { placesConfigured, searchPlaces } from '@/lib/geo/places';
 import { createTokenClient } from '@/lib/supabase/token';
 import { userIdFrom } from './auth';
 
@@ -111,6 +114,82 @@ export function registerTools(server: McpServer, appOrigin: string) {
   );
 
   server.registerTool(
+    'lookup_location',
+    {
+      title: 'Find an office address',
+      description:
+        "Resolve an office to a real address before recording it. This is the programmatic " +
+        "half of the address autocomplete the web form shows: pass whatever the posting says " +
+        "— \"Shopify Montreal\", \"1 Hacker Way, Menlo Park\", \"our Toronto office\" — and it " +
+        "returns the candidates Google matched, best first, each with a `placeId` to hand to " +
+        "create_application or set_application_location. Include the company name in the query " +
+        "when the posting only names a city: \"Montreal\" alone is a metro area, while " +
+        "\"Shopify Montreal\" is a building. Pick a candidate rather than inventing an address; " +
+        "if none of them is plausibly the right office, record the city as plain text instead.",
+      inputSchema: z.object({
+        query: z.string().describe('What to look for, e.g. "Shopify Montreal office" or "490 Rue De la Gauchetiere O, Montreal".'),
+        limit: z.number().int().min(1).max(10).optional().describe('How many candidates to return. Defaults to 5.'),
+      }),
+    },
+    async ({ query, limit }, ctx) => {
+      // Gated on the caller like every other tool: this spends the project's
+      // Places quota, so it is not open to an unidentified token.
+      if (!callerId(ctx)) return problem('Could not identify the signed-in user.');
+
+      if (!placesConfigured()) {
+        return problem(
+          'Address lookup is not configured on this server (no GOOGLE_MAPS_API_KEY). ' +
+            'Record the location as plain text; it will have no map pin.',
+        );
+      }
+
+      try {
+        const places = await searchPlaces(query, limit ?? 5);
+        if (places.length === 0) return text(`Nothing matched "${query}".`);
+        return json(places);
+      } catch (error) {
+        return problem(`Address lookup failed: ${(error as Error).message}`);
+      }
+    },
+  );
+
+  server.registerTool(
+    'set_application_location',
+    {
+      title: 'Correct where the office is',
+      description:
+        'Change the office address on an application already recorded, and move its map pin ' +
+        'with it. Use this when the office turns out to be a different one than first ' +
+        'recorded, or when an application was saved with only a city and the exact address is ' +
+        'now known. Call lookup_location first and pass the `placeId` it returns. Everything ' +
+        'else about the application is left untouched.',
+      inputSchema: z.object({
+        id: z.uuid().describe('The application id, from search_applications.'),
+        location: z.string().optional().describe('The address to store. Omit to use the address that belongs to `locationPlaceId`.'),
+        locationPlaceId: z.string().optional().describe('Google place id from lookup_location. Without it the address is resolved from the text, which is a guess.'),
+      }),
+    },
+    async (args, ctx) => {
+      const userId = callerId(ctx);
+      if (!userId) return problem('Could not identify the signed-in user.');
+
+      const parsed = locationChangeInput.safeParse(args);
+      if (!parsed.success) return problem(formatIssues(parsed.error));
+
+      const result = await setLocation(createTokenClient(authToken(ctx)), userId, parsed.data);
+      if (result.error !== null) return problem(result.error);
+
+      // Say whether the pin actually moved. A silent "saved" would hide the
+      // case where the address stuck but Google could not place it.
+      const pinned =
+        result.data.location_lat !== null
+          ? `pinned at ${result.data.location_lat}, ${result.data.location_lng}`
+          : 'no map pin — the address could not be resolved';
+      return text(`Location set to "${result.data.location}" (${pinned}).\n${linkTo(parsed.data.id)}`);
+    },
+  );
+
+  server.registerTool(
     'create_application',
     {
       title: 'Add a job application',
@@ -121,14 +200,18 @@ export function registerTools(server: McpServer, appOrigin: string) {
         'location is worse than a missing one. Always pass `description` with the posting ' +
         'body: postings get taken down, and the saved text is what survives. Use ' +
         'status "wishlist" for something merely of interest and "applied" once it has been ' +
-        'submitted.',
+        'submitted. Unless the role is fully remote, an office location is required: call ' +
+        'lookup_location first and pass the `locationPlaceId` it returns, so the application ' +
+        'lands on the dashboard map at the right building rather than at whatever a city ' +
+        'name happens to match.',
       inputSchema: z.object({
         company: z.string().describe('Employer name. Reused if already known, so prefer the plain name ("Shopify", not "Shopify Inc.").'),
         role: z.string().describe('Job title as the posting states it.'),
         companyWebsite: z.string().optional().describe("The employer's own site. Used to resolve their logo."),
         jobUrl: z.string().optional().describe('URL of the posting.'),
         description: z.string().optional().describe('The posting body as plain text. Include responsibilities and requirements; drop boilerplate and nav text.'),
-        location: z.string().optional().describe('Location as stated, e.g. "Montreal, QC" or "Canada (remote)".'),
+        location: z.string().optional().describe('Office location as stated, e.g. "Montreal, QC" or "490 Rue De la Gauchetière O, Montreal". Required unless remoteType is "remote".'),
+        locationPlaceId: z.string().optional().describe('Google place id for that office, from lookup_location. Pass it whenever you have one: it pins the exact address instead of a best guess at the text.'),
         remoteType: z.enum(REMOTE_TYPES).optional().describe(`One of: ${REMOTE_TYPES.join(' | ')}. Only when the posting says so.`),
         salaryMin: z.number().int().optional().describe('Bottom of the stated salary range, annual, as a whole number.'),
         salaryMax: z.number().int().optional().describe('Top of the stated salary range, annual, as a whole number.'),

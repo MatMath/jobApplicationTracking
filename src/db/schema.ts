@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   doublePrecision,
   index,
@@ -180,7 +181,19 @@ export const applications = pgTable(
     // conflating them makes per-platform response rates meaningless.
     platformFound: text('platform_found'),
     platformApplied: text('platform_applied'),
+    // The office, not the company. `companies` carries lat/lng too, but one
+    // employer has several offices and the question this answers is "where
+    // would I be going if I took *this* job" — which is a property of the
+    // posting. Required for anything but a fully remote role; see
+    // lib/applications/schema.ts.
     location: text('location'),
+    // Google's id for the resolved address. Kept so an edit can tell "the user
+    // picked a different place" from "the user fixed a typo", and so the
+    // coordinates can be re-fetched later without re-guessing from the text.
+    locationPlaceId: text('location_place_id'),
+    // Written by the server from the Places lookup, never by the client.
+    locationLat: doublePrecision('location_lat'),
+    locationLng: doublePrecision('location_lng'),
     remoteType: text('remote_type').$type<RemoteType>(),
     salaryMin: integer('salary_min'),
     salaryMax: integer('salary_max'),
@@ -204,6 +217,11 @@ export const applications = pgTable(
     index('applications_user_status_idx').on(t.userId, t.status),
     index('applications_user_applied_idx').on(t.userId, t.appliedAt),
     index('applications_company_idx').on(t.companyId),
+    // The dashboard map only ever asks for rows that have coordinates, so the
+    // index carries those and skips the nulls.
+    index('applications_user_located_idx')
+      .on(t.userId, t.locationLat)
+      .where(sql`location_lat is not null`),
   ],
 );
 

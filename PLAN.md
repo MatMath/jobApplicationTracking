@@ -25,7 +25,7 @@ The old system tracked real data that v1 dropped. Recovered from
 | `description` (job description body) | absent | **MVP.** Column. Postings get deleted; the URL alone rots. |
 | `acceptedOffer` | absent | **MVP.** Folded into an `outcome` column. |
 | `answer_receive` | inferred from history | **MVP.** Explicit `first_response_at` timestamp. A rejection *is* a response; inferring it from status transitions misses that. |
-| `gps` on company | absent | Phase 2 (map view). Stored as `lat`/`lng` now so the data is there. |
+| `gps` on company | absent | **Shipped**, but on the *application*, not the company: one employer has several offices, and the map answers "where are the jobs I applied to". `companies.lat`/`lng` remain unused. |
 | `/json/param` distinct-value lists | absent | **MVP.** Cheap autocomplete off your own history. |
 | `cover_letter` as inline text | file upload only | **Both.** Text column *and* `documents` for file versions. |
 
@@ -121,7 +121,9 @@ Drizzle stays as the schema source of truth and for types.
 - Any AI/LLM features (auto-extraction, resume matching, drafted emails)
 
 ## Phase 2
-- Company map view (the `lat`/`lng` columns exist from day one)
+- ~~Company map view~~ — shipped as an office map on the dashboard, pinned from
+  `applications.location_lat`/`location_lng` (Google Places resolves the address
+  on write). See README, "Office locations and the map".
 - Calendar view for interviews
 - Timeline view per application
 - Tags (remote, dream job, referral)

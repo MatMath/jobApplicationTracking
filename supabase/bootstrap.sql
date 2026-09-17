@@ -49,7 +49,13 @@ create table if not exists public.applications (
   recruiter_id      uuid references public.contacts (id) on delete set null,
   platform_found    text,
   platform_applied  text,
+  -- The office for this posting. Non-remote roles are required to carry one;
+  -- that rule lives in the application layer so it can explain itself, and so
+  -- rows predating it are not rejected. See supabase/004_application_location.sql.
   location          text,
+  location_place_id text,
+  location_lat      double precision,
+  location_lng      double precision,
   remote_type       text,
   salary_min        integer,
   salary_max        integer,
@@ -68,6 +74,10 @@ create index if not exists applications_user_idx on public.applications (user_id
 create index if not exists applications_user_status_idx on public.applications (user_id, status);
 create index if not exists applications_user_applied_idx on public.applications (user_id, applied_at);
 create index if not exists applications_company_idx on public.applications (company_id);
+-- Partial: the dashboard map reads only the rows that have coordinates.
+create index if not exists applications_user_located_idx
+  on public.applications (user_id, location_lat)
+  where location_lat is not null;
 
 -- ----------------------------------------------------------------- meetings
 create table if not exists public.meetings (

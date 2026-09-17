@@ -18,6 +18,7 @@
     "deploy": "gcloud builds submit --config cloudbuild.yaml ."
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1",
     "@modelcontextprotocol/server": "2.0.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@types/google.maps": "^3.66.3",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
