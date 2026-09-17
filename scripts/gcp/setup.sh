@@ -16,7 +16,7 @@ REPO=job-tracker
 DEPLOYER="job-tracker-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 RUNTIME="job-tracker-run@${PROJECT_ID}.iam.gserviceaccount.com"
 # Read by the build, inlined into the bundle: the deployer needs these.
-BUILD_SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN)
+BUILD_SECRETS=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY NEXT_PUBLIC_LOGO_DEV_TOKEN NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY)
 # Read by the running container, never by the browser: the runtime needs these.
 RUNTIME_SECRETS=(GOOGLE_MAPS_API_KEY)
 SECRETS=("${BUILD_SECRETS[@]}" "${RUNTIME_SECRETS[@]}")
@@ -78,7 +78,7 @@ for s in "${RUNTIME_SECRETS[@]}"; do
 done
 
 echo "- Maps Platform APIs (address lookup and the dashboard map)"
-gcloud services enable places.googleapis.com static-maps-backend.googleapis.com
+gcloud services enable places.googleapis.com static-maps-backend.googleapis.com maps-backend.googleapis.com
 
 echo
 echo "Done. Next: give each secret a value (./scripts/gcp/secrets.sh, or the console),"

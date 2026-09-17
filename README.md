@@ -67,14 +67,17 @@ gcloud config set project <PROJECT_ID>
 npm run deploy             # build, push, deploy
 ```
 
-**What goes into Secret Manager: four values.**
+**What goes into Secret Manager: five values.**
 
-Three are build-time: `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_LOGO_DEV_TOKEN`. Cloud
-Build fetches them itself (`availableSecrets` in `cloudbuild.yaml`) and passes
-them to `docker build`; they exist only inside that build step. Because Next
-inlines `NEXT_PUBLIC_*` into the bundle, **changing one means redeploying** -
-adding a secret version alone changes nothing that is running.
+Four are build-time: `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_LOGO_DEV_TOKEN` and
+`NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`. Cloud Build fetches them itself
+(`availableSecrets` in `cloudbuild.yaml`) and passes them to `docker build`;
+they exist only inside that build step. Secret Manager here is a place to keep
+configuration together, not a vault — every one of these is public by design
+once the bundle ships. Because Next inlines `NEXT_PUBLIC_*`, **changing one
+means redeploying** - adding a secret version alone changes nothing that is
+running.
 
 One is runtime: `GOOGLE_MAPS_API_KEY`, mounted into the container by Cloud Run
 (`--set-secrets`) and read by the runtime service account, which is the only
@@ -131,38 +134,65 @@ returns the candidates Google matched, each with a `placeId` to pass to
 `create_application` or `set_application_location`. The tool descriptions tell
 the model to look the office up rather than guess at it.
 
-**One key, server-side only.** `GOOGLE_MAPS_API_KEY` is read by the server and
-never prefixed `NEXT_PUBLIC_`, so it stays out of the browser bundle. That is
-also why suggestions go through `/api/places/search` and the map arrives as an
-image from `/api/map/applications` instead of a Google URL in the markup: both
-would otherwise publish the key to anyone who opens the page source. Both
-endpoints require a signed-in session — an open proxy to a metered API is
-somebody else's free geocoder.
+**The map pans and zooms.** It is a Maps JavaScript map with a pin per office:
+drag to move, the zoom buttons or ctrl/⌘-scroll to zoom, Street View and
+fullscreen in the corner, and a click on a pin opens the applications at that
+address as links. Scrolling the page over the map scrolls the page — zooming
+takes a modifier — so the map cannot swallow a scroll aimed past it. It follows
+the app's light/dark. The list beside it carries the same places, and is the
+part that works with JavaScript off and the part a screen reader can use.
 
-### Creating the key
+**Two keys, and the difference matters.** `GOOGLE_MAPS_API_KEY` is read only by
+the server and never prefixed `NEXT_PUBLIC_`. It can spend Places quota on
+geocoding, so it stays out of the bundle: that is why suggestions go through
+`/api/places/search` and the still map arrives as an image from
+`/api/map/applications` instead of a Google URL in the markup. Both endpoints
+require a signed-in session — an open proxy to a metered API is somebody else's
+free geocoder.
 
-With the `gcloud` CLI:
+`NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` is the opposite and is meant to be public,
+because a map that pans has to be drawn by the browser. It is restricted to the
+Maps JavaScript API and to this app's own domains, so the worst a scraped copy
+can do is draw a map — it cannot geocode. Leave it unset and the map falls back
+to the still image, which is also what shows while the library loads and if it
+fails to load at all.
+
+### Creating the keys
 
 ```bash
-gcloud services enable places.googleapis.com static-maps-backend.googleapis.com
+gcloud services enable places.googleapis.com static-maps-backend.googleapis.com \
+  maps-backend.googleapis.com
+
+# Server key: geocoding and the still map. Never leaves the server, so it gets
+# no referrer restriction - a request from a server has no Referer to check.
 gcloud services api-keys create --display-name="job-tracker-places" \
   --api-target=service=places.googleapis.com \
   --api-target=service=static-maps-backend.googleapis.com
+
+# Browser key: the interactive map only, locked to the origins it may run on.
+gcloud services api-keys create --display-name="job-tracker-maps-browser" \
+  --api-target=service=maps-backend.googleapis.com \
+  --allowed-referrers="http://localhost:3000/*","https://<your-service>/*"
+
+# Print either one:
 gcloud services api-keys get-key-string "$(gcloud services api-keys list \
   --filter='displayName=job-tracker-places' --format='value(name)' | head -1)"
 ```
 
-Or in the console: **APIs & Services → Library**, enable **Places API (New)**
-and **Maps Static API**; then **Credentials → Create credentials → API key**,
-and under **API restrictions** limit it to those two. Leave the application
-restrictions unset: the key is used from a server, and an HTTP-referrer
-restriction rejects a request that has no `Referer` header.
+Or in the console: **APIs & Services → Library**, enable **Places API (New)**,
+**Maps Static API** and **Maps JavaScript API**; then **Credentials → Create
+credentials → API key** twice, restricting each under **API restrictions** as
+above, and the browser one under **Application restrictions → Websites**.
 
-Put the value in `.env` as `GOOGLE_MAPS_API_KEY`, and for a deploy, in Secret
-Manager under the same name (`./scripts/gcp/secrets.sh` does this from `.env`).
-Both APIs are billable with a monthly free allowance; the lookup fires at most
-once per 300ms of typing, and the map image is cached for five minutes per
-viewer.
+Put them in `.env` as `GOOGLE_MAPS_API_KEY` and
+`NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`, and for a deploy, in Secret Manager under
+the same names (`./scripts/gcp/secrets.sh` does this from `.env`). Add a new
+origin to the browser key's referrer list whenever the app gets one, or the map
+silently refuses to draw there.
+
+All three APIs are billable with a monthly free allowance. The address lookup
+fires at most once per 300ms of typing, the still map is cached five minutes per
+viewer, and dynamic map loads have their own free tier.
 
 ### Existing applications
 
