@@ -10,9 +10,12 @@
 # (availableSecrets below). Values exist only as env vars inside the build step
 # that declares them - never in this file, the trigger, or the build log.
 #
-# The running service is given NO secrets. Everything the app reads is
-# NEXT_PUBLIC_*, inlined at build time. The Supabase secret key and the
-# database URL bypass RLS and are deliberately absent from GCP.
+# Most of what the app reads is NEXT_PUBLIC_*, inlined at build time. The one
+# exception is GOOGLE_MAPS_API_KEY, mounted into the running service instead:
+# address lookup and the dashboard map are called from the server precisely so
+# that key never reaches a browser, and inlining it would undo that. The
+# Supabase secret key and the database URL bypass RLS and are deliberately
+# absent from GCP.
 
 steps:
   - id: build
@@ -55,8 +58,8 @@ steps:
       - ${_SERVICE}
       - --image=${_IMAGE}:${BUILD_ID}
       - --region=${_REGION}
-      # A dedicated identity with no roles: the app calls no Google APIs, so the
-      # container gets no credentials worth stealing.
+      # A dedicated identity whose only grant is reading the Maps key: the app
+      # calls Google with that key, not with this service account.
       - --service-account=${_RUNTIME_SA}
       - --allow-unauthenticated
       - --port=8080
@@ -64,6 +67,9 @@ steps:
       # default is tomorrow every evening in Montreal, and week buckets on the
       # dashboard shift. Set to the zone the user lives in.
       - --set-env-vars=TZ=${_TZ}
+      # Fetched from Secret Manager by the runtime identity at start-up, so a
+      # rotated key needs a new revision but not a rebuild.
+      - --set-secrets=GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest
       - --cpu=1
       - --memory=512Mi
       # Scale to zero: a personal tracker idles most of the day and costs

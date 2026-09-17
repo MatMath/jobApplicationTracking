@@ -9,6 +9,9 @@ data model.
 
 - **Node.js 20+** — <https://nodejs.org> (or via `nvm`). Not currently installed.
 - A **Supabase project** — <https://supabase.com/dashboard>
+- A **Google Maps Platform key** for office addresses and the dashboard map —
+  optional, see [Office locations](#office-locations-and-the-map). Without it
+  addresses still save; they just get no map pin.
 
 ## Setup
 
@@ -17,7 +20,14 @@ data model.
    provisioning trigger, and the RLS policies. Safe to re-run.
    An already-provisioned database instead needs the numbered files it has
    not yet run, in order: [`002_profiles.sql`](supabase/002_profiles.sql),
-   [`003_dashboard.sql`](supabase/003_dashboard.sql).
+   [`003_dashboard.sql`](supabase/003_dashboard.sql),
+   [`004_application_location.sql`](supabase/004_application_location.sql).
+
+   Skipping one shows up at runtime, not at build time — saving an application
+   against a database missing `004` fails with *"Could not find the
+   'location_lat' column of 'applications' in the schema cache"*. `npm test`
+   checks that every column in `schema.ts` is declared by some file in
+   `supabase/`, but it cannot know which files a given database has run.
 2. In Authentication → Sign In / Providers: enable **Google** (Client ID and
    Secret from Google Cloud Console, with
    `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized
@@ -57,17 +67,23 @@ gcloud config set project <PROJECT_ID>
 npm run deploy             # build, push, deploy
 ```
 
-**What goes into Secret Manager: three values, all build-time.**
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
-`NEXT_PUBLIC_LOGO_DEV_TOKEN`. Cloud Build fetches them itself
-(`availableSecrets` in `cloudbuild.yaml`) and passes them to `docker build`;
-they exist only inside that build step. Because Next inlines `NEXT_PUBLIC_*`
-into the bundle, **changing one means redeploying** - adding a secret version
-alone changes nothing that is running.
+**What goes into Secret Manager: four values.**
+
+Three are build-time: `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_LOGO_DEV_TOKEN`. Cloud
+Build fetches them itself (`availableSecrets` in `cloudbuild.yaml`) and passes
+them to `docker build`; they exist only inside that build step. Because Next
+inlines `NEXT_PUBLIC_*` into the bundle, **changing one means redeploying** -
+adding a secret version alone changes nothing that is running.
+
+One is runtime: `GOOGLE_MAPS_API_KEY`, mounted into the container by Cloud Run
+(`--set-secrets`) and read by the runtime service account, which is the only
+identity granted access to it. It stays out of the bundle on purpose — address
+lookup and the map are called from the server so that key is never handed to a
+browser. Rotating it needs a new revision, not a rebuild.
 
 **What deliberately does not:** `SUPABASE_SECRET_KEY` and `DATABASE_URL`.
-Both bypass RLS, and the app needs neither at runtime - the running service is
-given no secrets at all.
+Both bypass RLS, and the app needs neither at runtime.
 
 If you create secrets in the console, paste the bare value. A trailing newline
 would be inlined into the JavaScript; the build strips one defensively, but it
@@ -87,12 +103,91 @@ Defaults (region `northamerica-northeast1`, `TZ=America/Toronto`, scale to
 zero, max 2 instances) live in `cloudbuild.yaml` under `substitutions`. Put
 the region near your Supabase project's: every page load makes Supabase calls.
 
+## Office locations and the map
+
+Every application records where the office is. It is required unless the role is
+fully remote — and a remote role may still record one, since "remote" often
+means remote within a region, and a head office you visit quarterly is worth
+knowing. The address field suggests real addresses as you type, and the
+dashboard plots every one of them on a map.
+
+**How it is wired.** Picking a suggestion stores Google's place id alongside the
+text; the coordinates are then looked up again on the server when the form is
+saved, so nothing a browser sends can move a pin. Change the address later and
+the pin moves with it, on every path — the form, and the MCP tools. When the
+lookup fails or no key is configured, the address is saved as plain text with no
+pin, and the next save of that application retries.
+
+**"Remote" is not an address.** Google answers almost anything: it resolves
+`Remote` to a holiday villa in Greece and `Anywhere` to a tour operator in Costa
+Rica, both with real coordinates. Text that is only a placeholder is refused
+before the lookup is made (`isPlaceholderLocation` in `src/lib/geo/places.ts`),
+so those applications keep their text and stay off the map. A placeholder *next
+to* a real place is fine — "Montreal (remote)" still finds Montreal.
+
+**Over MCP**, the same thing happens deliberately rather than by typing:
+`lookup_location` takes free text ("Shopify Montreal", "our Toronto office") and
+returns the candidates Google matched, each with a `placeId` to pass to
+`create_application` or `set_application_location`. The tool descriptions tell
+the model to look the office up rather than guess at it.
+
+**One key, server-side only.** `GOOGLE_MAPS_API_KEY` is read by the server and
+never prefixed `NEXT_PUBLIC_`, so it stays out of the browser bundle. That is
+also why suggestions go through `/api/places/search` and the map arrives as an
+image from `/api/map/applications` instead of a Google URL in the markup: both
+would otherwise publish the key to anyone who opens the page source. Both
+endpoints require a signed-in session — an open proxy to a metered API is
+somebody else's free geocoder.
+
+### Creating the key
+
+With the `gcloud` CLI:
+
+```bash
+gcloud services enable places.googleapis.com static-maps-backend.googleapis.com
+gcloud services api-keys create --display-name="job-tracker-places" \
+  --api-target=service=places.googleapis.com \
+  --api-target=service=static-maps-backend.googleapis.com
+gcloud services api-keys get-key-string "$(gcloud services api-keys list \
+  --filter='displayName=job-tracker-places' --format='value(name)' | head -1)"
+```
+
+Or in the console: **APIs & Services → Library**, enable **Places API (New)**
+and **Maps Static API**; then **Credentials → Create credentials → API key**,
+and under **API restrictions** limit it to those two. Leave the application
+restrictions unset: the key is used from a server, and an HTTP-referrer
+restriction rejects a request that has no `Referer` header.
+
+Put the value in `.env` as `GOOGLE_MAPS_API_KEY`, and for a deploy, in Secret
+Manager under the same name (`./scripts/gcp/secrets.sh` does this from `.env`).
+Both APIs are billable with a monthly free allowance; the lookup fires at most
+once per 300ms of typing, and the map image is cached for five minutes per
+viewer.
+
+### Existing applications
+
+Rows recorded before this existed keep their address text and have no pin.
+To resolve them all at once:
+
+```bash
+npm run geo:backfill -- --dry   # list what would be looked up, spend nothing
+npm run geo:backfill            # one Places lookup per row
+```
+
+It runs on `SUPABASE_SECRET_KEY` over the REST API, which bypasses RLS and so
+touches every user's rows. It deliberately does not use `DATABASE_URL`: the
+direct `db.<ref>.supabase.co` host is IPv6-only and unreachable from a network
+without an IPv6 route, which would make the script fail to connect on exactly
+the machines most likely to run it. Saving an application from the UI
+re-resolves it too, so the backfill is a convenience, not a requirement.
+
 ## Connect Claude (MCP)
 
 The app exposes an MCP server at `/api/mcp`, so Claude can fill the tracker from
 a job posting: give it a URL and it reads the page itself, then calls
 `create_application` with the fields it extracted. It can also search, move an
-application along the pipeline, and add notes and interview rounds.
+application along the pipeline, add notes and interview rounds, and resolve an
+office address to a map pin (`lookup_location`, `set_application_location`).
 
 Authorization is Supabase Auth's own OAuth 2.1 server, not something this app
 implements — Claude discovers it via `/.well-known/oauth-protected-resource`,
@@ -159,6 +254,10 @@ Then: *"Add this job to my tracker: &lt;url&gt;"*.
 | `src/db/index.ts` | Drizzle client |
 | `drizzle/` | Generated migrations once Node is available — commit, never edit |
 | `src/lib/applications/` | Validation and write logic, shared by the form and the MCP tools |
+| `src/lib/geo/` | Places lookup, map URLs, and the pin grouping the map and its list share |
+| `src/app/api/places/search/` | Address suggestions, proxied so the key stays server-side |
+| `src/app/api/map/applications/` | The dashboard map, fetched as an image for the same reason |
+| `scripts/geo/backfill.ts` | One-off: pins applications recorded before geocoding existed |
 | `src/lib/mcp/` | MCP tool definitions and bearer-token verification |
 | `src/app/api/mcp/route.ts` | The MCP endpoint |
 | `src/app/oauth/consent/` | Consent screen for Supabase's OAuth 2.1 server |
