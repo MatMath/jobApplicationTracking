@@ -116,6 +116,7 @@ export function McpGuide({ origin }: { origin: string }) {
         <li>&ldquo;Have I applied to Shopify?&rdquo;</li>
         <li>&ldquo;I got a phone screen at Acme — move it along.&rdquo;</li>
         <li>&ldquo;Log today&rsquo;s technical round: they asked me to design a rate limiter.&rdquo;</li>
+        <li>&ldquo;The Acme role is at their Toronto office, not Montreal.&rdquo;</li>
       </ul>
 
       <p className="mt-4 text-xs opacity-50">

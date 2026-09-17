@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { RESPONDED_STATUSES, type Status } from '@/db/schema';
 import { fromDateInput } from '@/lib/date';
+import { resolveLocation } from '@/lib/geo/places';
 import type {
   ApplicationInput,
   ApplicationSearchInput,
   ApplicationUpdateInput,
+  LocationChangeInput,
   MeetingInput,
   NoteInput,
   StatusChangeInput,
@@ -77,6 +79,69 @@ export async function resolveCompanyId(
   return ok(created.id as string);
 }
 
+/** The four columns that describe where the office is. */
+type LocationColumns = {
+  location: string | null;
+  location_place_id: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
+};
+
+/**
+ * Turns an address — typed, picked from the suggestions, or passed by a model —
+ * into the columns to write, geocoding it on the way.
+ *
+ * Here rather than in the callers because "the pin follows the address" has to
+ * hold on every path: a form save, a tool call, an address corrected six weeks
+ * later. Left to each caller, one of them eventually updates the text and
+ * leaves the old coordinates behind, and the map quietly lies.
+ *
+ * `current` is the row as it stands, when there is one. Google is only asked
+ * again when the address actually changed, or when a previous attempt left no
+ * coordinates — an unrelated edit to the salary should not spend a lookup.
+ */
+async function locationColumns(
+  location: string | null,
+  placeId: string | null,
+  /** Wider than LocationColumns in practice — only these four are read. */
+  current?: LocationColumns,
+): Promise<LocationColumns> {
+  const blank = { location: null, location_place_id: null, location_lat: null, location_lng: null };
+  if (!location && !placeId) return blank;
+
+  const unchanged =
+    current !== undefined &&
+    current.location === location &&
+    current.location_place_id === placeId;
+  const located = current?.location_lat != null && current?.location_lng != null;
+  // Rebuilt field by field rather than returned as-is: `current` is a wider row
+  // than this type, and spreading it into an update would write back columns
+  // this function has no business touching.
+  if (unchanged && located) {
+    return {
+      location: current.location,
+      location_place_id: current.location_place_id,
+      location_lat: current.location_lat,
+      location_lng: current.location_lng,
+    };
+  }
+
+  const place = await resolveLocation(location, placeId);
+  if (!place) {
+    // The address stands; the pin does not. Keeping the old coordinates against
+    // a new address would be worse than having none — the next edit retries.
+    return { location, location_place_id: placeId, location_lat: null, location_lng: null };
+  }
+
+  return {
+    // A caller that sent only a place id gets Google's address as the label.
+    location: location ?? place.address,
+    location_place_id: place.placeId,
+    location_lat: place.lat,
+    location_lng: place.lng,
+  };
+}
+
 export async function createApplication(
   supabase: SupabaseClient,
   userId: string,
@@ -84,6 +149,8 @@ export async function createApplication(
 ): Promise<WriteResult<string>> {
   const company = await resolveCompanyId(supabase, userId, input.company, input.companyWebsite);
   if (company.error !== null) return fail(company.error);
+
+  const place = await locationColumns(input.location, input.locationPlaceId);
 
   const { data: created, error } = await supabase
     .from('applications')
@@ -96,7 +163,7 @@ export async function createApplication(
       application_type: input.applicationType,
       platform_found: input.platformFound,
       platform_applied: input.platformApplied,
-      location: input.location,
+      ...place,
       remote_type: input.remoteType,
       salary_min: input.salaryMin,
       salary_max: input.salaryMax,
@@ -127,6 +194,12 @@ export async function createApplication(
 
 type Lifecycle = { status: Status; first_response_at: string | null; closed_at: string | null };
 
+/** What an update needs to know about the row before it rewrites it. */
+type CurrentRow = Lifecycle & LocationColumns & { applied_at: string | null };
+
+const CURRENT_COLUMNS =
+  'status, first_response_at, closed_at, applied_at, location, location_place_id, location_lat, location_lng';
+
 /**
  * Stamp the first reply the moment the pipeline first moves past applied. A
  * rejection counts: it is still a response, and treating it otherwise would
@@ -139,21 +212,21 @@ function lifecycleTimestamps(current: Lifecycle, status: string, now: string) {
   };
 }
 
-async function loadLifecycle(
+async function loadCurrent(
   supabase: SupabaseClient,
   userId: string,
   id: string,
-): Promise<WriteResult<Lifecycle & { applied_at: string | null }>> {
+): Promise<WriteResult<CurrentRow>> {
   const { data, error } = await supabase
     .from('applications')
-    .select('status, first_response_at, closed_at, applied_at')
+    .select(CURRENT_COLUMNS)
     .eq('id', id)
     .eq('user_id', userId)
     .maybeSingle();
 
   if (error) return fail(error.message);
   if (!data) return fail('No such application.');
-  return ok(data as Lifecycle & { applied_at: string | null });
+  return ok(data as unknown as CurrentRow);
 }
 
 export async function updateApplication(
@@ -161,11 +234,14 @@ export async function updateApplication(
   userId: string,
   input: ApplicationUpdateInput,
 ): Promise<WriteResult> {
-  const current = await loadLifecycle(supabase, userId, input.id);
+  const current = await loadCurrent(supabase, userId, input.id);
   if (current.error !== null) return fail(current.error);
 
   const company = await resolveCompanyId(supabase, userId, input.company, input.companyWebsite);
   if (company.error !== null) return fail(company.error);
+
+  // An address that changed is re-geocoded here, in the same save.
+  const place = await locationColumns(input.location, input.locationPlaceId, current.data);
 
   const statusChanged = input.status !== current.data.status;
   const now = new Date().toISOString();
@@ -180,7 +256,7 @@ export async function updateApplication(
       application_type: input.applicationType,
       platform_found: input.platformFound,
       platform_applied: input.platformApplied,
-      location: input.location,
+      ...place,
       remote_type: input.remoteType,
       salary_min: input.salaryMin,
       salary_max: input.salaryMax,
@@ -217,7 +293,7 @@ export async function changeStatus(
   userId: string,
   input: StatusChangeInput,
 ): Promise<WriteResult> {
-  const current = await loadLifecycle(supabase, userId, input.id);
+  const current = await loadCurrent(supabase, userId, input.id);
   if (current.error !== null) return fail(current.error);
 
   const statusChanged = input.status !== current.data.status;
@@ -247,6 +323,32 @@ export async function changeStatus(
   }
 
   return ok(null);
+}
+
+/**
+ * Corrects where the office is, and moves the pin with it. The full update
+ * above rewrites every column from a form; this is the equivalent of
+ * changeStatus for an address — "that role is at their Toronto office" must not
+ * blank out a description the caller did not repeat.
+ */
+export async function setLocation(
+  supabase: SupabaseClient,
+  userId: string,
+  input: LocationChangeInput,
+): Promise<WriteResult<LocationColumns>> {
+  const current = await loadCurrent(supabase, userId, input.id);
+  if (current.error !== null) return fail(current.error);
+
+  const place = await locationColumns(input.location, input.locationPlaceId, current.data);
+
+  const { error } = await supabase
+    .from('applications')
+    .update(place)
+    .eq('id', input.id)
+    .eq('user_id', userId);
+
+  if (error) return fail(error.message);
+  return ok(place);
 }
 
 export async function addNote(
@@ -284,7 +386,7 @@ export async function addMeeting(
 
 /** The columns a caller outside the UI needs to identify and act on a row. */
 const SUMMARY_COLUMNS =
-  'id, role, status, outcome, location, remote_type, salary_min, salary_max, salary_currency, job_url, platform_found, platform_applied, applied_at, first_response_at, closed_at, created_at, companies (id, name, website)';
+  'id, role, status, outcome, location, location_place_id, location_lat, location_lng, remote_type, salary_min, salary_max, salary_currency, job_url, platform_found, platform_applied, applied_at, first_response_at, closed_at, created_at, companies (id, name, website)';
 
 export async function searchApplications(
   supabase: SupabaseClient,

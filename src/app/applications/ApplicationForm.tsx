@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import {
   APPLICATION_TYPE_LABELS,
   COMMON_PLATFORMS,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/types';
 import type { FormState } from './actions';
 import { toDateInput } from '@/lib/date';
+import { LocationField } from './LocationField';
 
 const initialState: FormState = { error: null };
 
@@ -19,15 +20,18 @@ const field =
 
 function Field({
   label,
+  hint,
   children,
 }: {
   label: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="opacity-70">{label}</span>
       {children}
+      {hint ? <span className="text-xs opacity-50">{hint}</span> : null}
     </label>
   );
 }
@@ -52,6 +56,12 @@ export function ApplicationForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const v = values ?? {};
   const isEdit = Boolean(v.id);
+
+  // The arrangement decides whether the office address is required, so the two
+  // fields have to know about each other. Only "remote" excuses it — the same
+  // rule the server enforces in lib/applications/schema.ts.
+  const [remoteType, setRemoteType] = useState(v.remote_type ?? '');
+  const officeRequired = remoteType !== 'remote';
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -98,7 +108,7 @@ export function ApplicationForm({
         ))}
       </datalist>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Sourcing">
           <select name="application_type" defaultValue={v.application_type ?? ''} className={field}>
             <option value="">—</option>
@@ -107,11 +117,13 @@ export function ApplicationForm({
             ))}
           </select>
         </Field>
-        <Field label="Location">
-          <input name="location" defaultValue={v.location ?? ''} className={field} />
-        </Field>
         <Field label="Arrangement">
-          <select name="remote_type" defaultValue={v.remote_type ?? ''} className={field}>
+          <select
+            name="remote_type"
+            value={remoteType}
+            onChange={(e) => setRemoteType(e.target.value)}
+            className={field}
+          >
             <option value="">—</option>
             {Object.entries(REMOTE_LABELS).map(([val, l]) => (
               <option key={val} value={val}>{l}</option>
@@ -119,6 +131,22 @@ export function ApplicationForm({
           </select>
         </Field>
       </div>
+
+      <Field
+        label={officeRequired ? 'Office location *' : 'Office location'}
+        hint={
+          officeRequired
+            ? 'Pick a suggestion to drop it on the dashboard map.'
+            : 'Optional for a remote role — still worth recording if there is an office.'
+        }
+      >
+        <LocationField
+          className={field}
+          defaultValue={v.location ?? ''}
+          defaultPlaceId={v.location_place_id ?? ''}
+          required={officeRequired}
+        />
+      </Field>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Salary min">
