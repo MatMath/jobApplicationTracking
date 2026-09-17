@@ -194,22 +194,12 @@ All three APIs are billable with a monthly free allowance. The address lookup
 fires at most once per 300ms of typing, the still map is cached five minutes per
 viewer, and dynamic map loads have their own free tier.
 
-### Existing applications
+### An application with no pin
 
-Rows recorded before this existed keep their address text and have no pin.
-To resolve them all at once:
-
-```bash
-npm run geo:backfill -- --dry   # list what would be looked up, spend nothing
-npm run geo:backfill            # one Places lookup per row
-```
-
-It runs on `SUPABASE_SECRET_KEY` over the REST API, which bypasses RLS and so
-touches every user's rows. It deliberately does not use `DATABASE_URL`: the
-direct `db.<ref>.supabase.co` host is IPv6-only and unreachable from a network
-without an IPv6 route, which would make the script fail to connect on exactly
-the machines most likely to run it. Saving an application from the UI
-re-resolves it too, so the backfill is a convenience, not a requirement.
+An address that could not be resolved — the lookup was down, the key was not set
+yet, or the text was a placeholder — keeps its text and simply has no pin. Save
+that application again and the address is resolved on the way through, so there
+is nothing to run and nothing to remember.
 
 ## Connect Claude (MCP)
 
@@ -287,7 +277,6 @@ Then: *"Add this job to my tracker: &lt;url&gt;"*.
 | `src/lib/geo/` | Places lookup, map URLs, and the pin grouping the map and its list share |
 | `src/app/api/places/search/` | Address suggestions, proxied so the key stays server-side |
 | `src/app/api/map/applications/` | The dashboard map, fetched as an image for the same reason |
-| `scripts/geo/backfill.ts` | One-off: pins applications recorded before geocoding existed |
 | `src/lib/mcp/` | MCP tool definitions and bearer-token verification |
 | `src/app/api/mcp/route.ts` | The MCP endpoint |
 | `src/app/oauth/consent/` | Consent screen for Supabase's OAuth 2.1 server |

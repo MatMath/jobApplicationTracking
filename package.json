@@ -12,7 +12,6 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
-    "geo:backfill": "tsx --env-file=.env scripts/geo/backfill.ts",
     "test": "vitest run",
     "db:push": "drizzle-kit push",
     "build:check": "NEXT_DIST_DIR=.next-build next build",
