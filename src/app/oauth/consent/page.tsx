@@ -2,18 +2,23 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { recognizeClient } from '@/lib/mcp/clients';
 import { ConsentForm } from './ConsentForm';
 
 /**
  * The consent screen for Supabase Auth's OAuth 2.1 server, which redirects here
  * (the project's configured authorization path) with an authorization_id.
  *
- * This page is the whole access-control story for the MCP endpoint. Dynamic
- * client registration is open, so any client can ask; nothing is granted until
- * someone signed in clicks Allow here. That is why the client's name and its
- * redirect URI are shown plainly rather than prettified away — the redirect URI
- * is the only thing that distinguishes Claude from something merely calling
- * itself Claude.
+ * This page is the whole access-control story for the MCP endpoint. With
+ * dynamic client registration on, any client can ask and any client can call
+ * itself whatever it likes; nothing is granted until someone signed in clicks
+ * Allow here. So the name is presented as a claim, and the redirect URI — the
+ * one field an attacker cannot fake usefully, since it is where the code gets
+ * delivered — is what the page actually vouches for. See lib/mcp/clients.ts.
+ *
+ * `logo_uri` is deliberately never rendered: it is client-supplied, and loading
+ * it would let an unapproved stranger put an image of their choosing on this
+ * page and learn when it was viewed.
  *
  * Not in middleware.ts's PUBLIC_PATHS on purpose: a signed-out visitor must be
  * bounced to /login and returned here with the authorization_id intact.
@@ -74,6 +79,7 @@ export default async function ConsentPage({
   if (!('authorization_id' in data)) redirect(data.redirect_url as Route);
 
   const scopes = data.scope.split(' ').filter(Boolean);
+  const client = recognizeClient(data.redirect_uri);
 
   return (
     <Shell>
@@ -84,7 +90,26 @@ export default async function ConsentPage({
         Signed in as {data.user.email}.
       </p>
 
-      <dl className="mt-6 flex flex-col gap-3 rounded border border-black/15 p-4 text-sm dark:border-white/15">
+      {client.known ? (
+        <p className="mt-4 rounded border border-black/15 px-3 py-2 text-sm dark:border-white/15">
+          This request will return to <strong>{client.label}</strong> at{' '}
+          <span className="font-mono text-xs">{client.host}</span>.
+        </p>
+      ) : (
+        <p
+          role="alert"
+          className="mt-4 rounded border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
+        >
+          <strong>Unrecognised app.</strong> It calls itself
+          &ldquo;{data.client.name}&rdquo;, but any app can pick any name. Access
+          would be handed to{' '}
+          <span className="break-all font-mono text-xs">{client.host}</span>
+          {client.insecure ? ', over an unencrypted connection' : ''}. Only
+          continue if you started this and that address is what you expect.
+        </p>
+      )}
+
+      <dl className="mt-4 flex flex-col gap-3 rounded border border-black/15 p-4 text-sm dark:border-white/15">
         <div className="flex flex-col gap-0.5">
           <dt className="text-xs uppercase tracking-wide opacity-50">Returns to</dt>
           <dd className="break-all font-mono text-xs">{data.redirect_uri}</dd>
@@ -97,8 +122,7 @@ export default async function ConsentPage({
 
       <p className="mt-4 text-sm opacity-70">
         It will be able to read and add job applications, notes and interview
-        rounds on your behalf. Only allow this if you started the connection and
-        recognise the address above.
+        rounds on your behalf.
       </p>
 
       <ConsentForm authorizationId={authorizationId} />

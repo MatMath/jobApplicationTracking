@@ -104,20 +104,44 @@ web UI scope the MCP tools, and the Cloud Run service still holds no secrets.
 
 1. Enable the OAuth 2.1 server.
 2. Set the authorization URL path to `/oauth/consent`.
-3. Register a client for Claude:
+3. Enable **dynamic client registration**.
 
-   ```
-   node scripts/supabase/register-oauth-client.mjs Claude
-   ```
+Step 3 is what makes connecting a one-field operation. With it on, the client
+registers itself during discovery and the user pastes a URL and nothing else —
+no client id, no secret, no dashboard visit. With it off, every user has to be
+handed a client id out of band, which is not a thing you can ask of people.
 
-   This needs `SUPABASE_SECRET_KEY` from `.env` and prints a client id. The
-   alternative is enabling dynamic client registration, which lets any client
-   register itself — registering by hand keeps the list to clients you created.
+The cost is that anyone can register a client and name it whatever they like,
+so `client_name` on the consent screen proves nothing. That is handled where it
+has to be: the consent screen treats the name as an unverified claim and vouches
+for the redirect URI instead, warning plainly when the app is one it does not
+recognise (`src/lib/mcp/clients.ts`). Nothing is granted until a signed-in user
+approves it there.
 
-**In Claude**: Settings → Connectors → Add custom connector, with the URL
-`https://<your-service>/api/mcp` and the client id from step 3. Approving the
-consent screen is what grants access; revoke it any time at
-`/settings/connections`.
+**In Claude**: Settings → Connectors → Add custom connector, and paste:
+
+```
+https://<your-service>/api/mcp
+```
+
+That is the whole setup. Claude reads `/.well-known/oauth-protected-resource`,
+finds Supabase, registers itself, and sends you to `/oauth/consent` to approve.
+Revoke any time at `/settings/connections`.
+
+<details>
+<summary>If you cannot enable dynamic client registration</summary>
+
+Register a client by hand and give its id to each user:
+
+```
+node scripts/supabase/register-oauth-client.mjs Claude
+```
+
+Needs `SUPABASE_SECRET_KEY` from `.env`. Its redirect URI list has to name every
+client surface up front, because Supabase matches redirect URIs exactly and does
+not accept wildcards — which is the other reason this does not scale.
+
+</details>
 
 Then: *"Add this job to my tracker: &lt;url&gt;"*.
 
@@ -138,7 +162,8 @@ Then: *"Add this job to my tracker: &lt;url&gt;"*.
 | `src/lib/mcp/` | MCP tool definitions and bearer-token verification |
 | `src/app/api/mcp/route.ts` | The MCP endpoint |
 | `src/app/oauth/consent/` | Consent screen for Supabase's OAuth 2.1 server |
-| `scripts/supabase/` | One-time OAuth client registration |
+| `src/lib/mcp/clients.ts` | Recognises OAuth clients at the consent screen |
+| `scripts/supabase/` | Manual OAuth client registration, if DCR is off |
 | `Dockerfile` | Three-stage build to a standalone Next server |
 | `cloudbuild.yaml` | Build, push, deploy; pulls config from Secret Manager |
 | `scripts/gcp/` | One-time project setup and secret upload |
