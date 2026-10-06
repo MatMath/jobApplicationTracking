@@ -125,4 +125,31 @@ describe('isPlaceholderLocation', () => {
 
     fetchSpy.mockRestore();
   });
+
+  it('refuses a region by its size when its type does not give it away', async () => {
+    const { isTooBroadToPin, resolveLocation } = await load('test-key');
+    // "Americas" and "Bay Area" are both a colloquial_area; only one is a place to work.
+    expect(isTooBroadToPin({ types: ['colloquial_area', 'political'], spanDegrees: 167.5 })).toBe(true);
+    expect(isTooBroadToPin({ types: ['colloquial_area', 'political'], spanDegrees: 2.4 })).toBe(false);
+    expect(isTooBroadToPin({ types: ['locality'], spanDegrees: null })).toBe(false);
+
+    // The frame Google returns for the Americas crosses the antimeridian.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          places: [
+            {
+              id: 'p1',
+              formattedAddress: 'Americas',
+              location: { latitude: 54.5, longitude: -105.3 },
+              types: ['colloquial_area', 'political'],
+              viewport: { low: { latitude: -60, longitude: 172.5 }, high: { latitude: 83.5, longitude: -20 } },
+            },
+          ],
+        }),
+      ),
+    );
+    await expect(resolveLocation('Remote - Americas', null)).resolves.toBeNull();
+    fetchSpy.mockRestore();
+  });
 });
