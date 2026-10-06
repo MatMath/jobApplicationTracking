@@ -88,4 +88,41 @@ describe('isPlaceholderLocation', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
+
+  it('looks up the region a remote posting names, not the word "Remote"', async () => {
+    const { withoutRemoteQualifier } = await load('test-key');
+    expect(withoutRemoteQualifier('Remote - United States')).toBe('United States');
+    expect(withoutRemoteQualifier('Remote (Canada)')).toBe('Canada');
+    expect(withoutRemoteQualifier('Fully remote in Quebec')).toBe('Quebec');
+    expect(withoutRemoteQualifier('Remote, Montreal, QC')).toBe('Montreal, QC');
+    expect(withoutRemoteQualifier('Montreal (remote)')).toBe('Montreal');
+    expect(withoutRemoteQualifier('Toronto, ON - Remote')).toBe('Toronto, ON');
+    // Not a qualifier: a street, and the bare word.
+    expect(withoutRemoteQualifier('Remote Way, Austin')).toBe('Remote Way, Austin');
+    expect(withoutRemoteQualifier('Remote')).toBe('Remote');
+  });
+
+  it('gives a country or a province no pin, and a city one', async () => {
+    const { resolveLocation } = await load('test-key');
+    const answer = (types: string[]) =>
+      new Response(
+        JSON.stringify({
+          places: [{ id: 'p1', formattedAddress: 'Somewhere', location: { latitude: 39.8, longitude: -98.6 }, types }],
+        }),
+      );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    fetchSpy.mockResolvedValueOnce(answer(['country', 'political']));
+    await expect(resolveLocation('Remote - United States', null)).resolves.toBeNull();
+    // Asked about the country, not about a business with "Remote" in its name.
+    expect(JSON.parse(fetchSpy.mock.calls[0][1]!.body as string).textQuery).toBe('United States');
+
+    fetchSpy.mockResolvedValueOnce(answer(['administrative_area_level_1', 'political']));
+    await expect(resolveLocation('Ontario', null)).resolves.toBeNull();
+
+    fetchSpy.mockResolvedValueOnce(answer(['locality', 'political']));
+    await expect(resolveLocation('Remote - Montreal, QC', null)).resolves.toMatchObject({ placeId: 'p1' });
+
+    fetchSpy.mockRestore();
+  });
 });
