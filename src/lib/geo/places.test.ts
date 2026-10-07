@@ -88,4 +88,68 @@ describe('isPlaceholderLocation', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
+
+  it('looks up the region a remote posting names, not the word "Remote"', async () => {
+    const { withoutRemoteQualifier } = await load('test-key');
+    expect(withoutRemoteQualifier('Remote - United States')).toBe('United States');
+    expect(withoutRemoteQualifier('Remote (Canada)')).toBe('Canada');
+    expect(withoutRemoteQualifier('Fully remote in Quebec')).toBe('Quebec');
+    expect(withoutRemoteQualifier('Remote, Montreal, QC')).toBe('Montreal, QC');
+    expect(withoutRemoteQualifier('Montreal (remote)')).toBe('Montreal');
+    expect(withoutRemoteQualifier('Toronto, ON - Remote')).toBe('Toronto, ON');
+    // Not a qualifier: a street, and the bare word.
+    expect(withoutRemoteQualifier('Remote Way, Austin')).toBe('Remote Way, Austin');
+    expect(withoutRemoteQualifier('Remote')).toBe('Remote');
+  });
+
+  it('gives a country or a province no pin, and a city one', async () => {
+    const { resolveLocation } = await load('test-key');
+    const answer = (types: string[]) =>
+      new Response(
+        JSON.stringify({
+          places: [{ id: 'p1', formattedAddress: 'Somewhere', location: { latitude: 39.8, longitude: -98.6 }, types }],
+        }),
+      );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    fetchSpy.mockResolvedValueOnce(answer(['country', 'political']));
+    await expect(resolveLocation('Remote - United States', null)).resolves.toBeNull();
+    // Asked about the country, not about a business with "Remote" in its name.
+    expect(JSON.parse(fetchSpy.mock.calls[0][1]!.body as string).textQuery).toBe('United States');
+
+    fetchSpy.mockResolvedValueOnce(answer(['administrative_area_level_1', 'political']));
+    await expect(resolveLocation('Ontario', null)).resolves.toBeNull();
+
+    fetchSpy.mockResolvedValueOnce(answer(['locality', 'political']));
+    await expect(resolveLocation('Remote - Montreal, QC', null)).resolves.toMatchObject({ placeId: 'p1' });
+
+    fetchSpy.mockRestore();
+  });
+
+  it('refuses a region by its size when its type does not give it away', async () => {
+    const { isTooBroadToPin, resolveLocation } = await load('test-key');
+    // "Americas" and "Bay Area" are both a colloquial_area; only one is a place to work.
+    expect(isTooBroadToPin({ types: ['colloquial_area', 'political'], spanDegrees: 167.5 })).toBe(true);
+    expect(isTooBroadToPin({ types: ['colloquial_area', 'political'], spanDegrees: 2.4 })).toBe(false);
+    expect(isTooBroadToPin({ types: ['locality'], spanDegrees: null })).toBe(false);
+
+    // The frame Google returns for the Americas crosses the antimeridian.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          places: [
+            {
+              id: 'p1',
+              formattedAddress: 'Americas',
+              location: { latitude: 54.5, longitude: -105.3 },
+              types: ['colloquial_area', 'political'],
+              viewport: { low: { latitude: -60, longitude: 172.5 }, high: { latitude: 83.5, longitude: -20 } },
+            },
+          ],
+        }),
+      ),
+    );
+    await expect(resolveLocation('Remote - Americas', null)).resolves.toBeNull();
+    fetchSpy.mockRestore();
+  });
 });

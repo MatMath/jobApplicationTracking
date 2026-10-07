@@ -31,6 +31,10 @@ export type Place = {
   name: string | null;
   lat: number;
   lng: number;
+  /** Google's own classification, e.g. ["locality", "political"]. */
+  types: string[];
+  /** How much ground the place covers, in degrees on its longer side; null if Google did not say. */
+  spanDegrees: number | null;
 };
 
 /** False when no key is configured; every caller degrades rather than erroring. */
@@ -43,7 +47,25 @@ type PlaceResponse = {
   formattedAddress?: string;
   displayName?: { text?: string };
   location?: { latitude?: number; longitude?: number };
+  types?: string[];
+  viewport?: { low?: LatLng; high?: LatLng };
 };
+
+type LatLng = { latitude?: number; longitude?: number };
+
+/** The longer side of Google's suggested frame for a place, in degrees. */
+function spanOf(viewport: PlaceResponse['viewport']): number | null {
+  const { low, high } = viewport ?? {};
+  if (
+    typeof low?.latitude !== 'number' || typeof low?.longitude !== 'number' ||
+    typeof high?.latitude !== 'number' || typeof high?.longitude !== 'number'
+  ) {
+    return null;
+  }
+  // A frame that crosses the antimeridian has its "high" longitude below its "low".
+  const lng = high.longitude - low.longitude;
+  return Math.max(high.latitude - low.latitude, lng < 0 ? lng + 360 : lng);
+}
 
 /** Drops anything missing the three fields that make a place useful to us. */
 function toPlace(raw: PlaceResponse): Place | null {
@@ -58,10 +80,12 @@ function toPlace(raw: PlaceResponse): Place | null {
     name: raw.displayName?.text ?? null,
     lat: location.latitude,
     lng: location.longitude,
+    types: raw.types ?? [],
+    spanDegrees: spanOf(raw.viewport),
   };
 }
 
-const FIELDS = 'id,formattedAddress,displayName,location';
+const FIELDS = 'id,formattedAddress,displayName,location,types,viewport';
 
 /**
  * Candidate offices for a free-text query, best match first.
@@ -140,9 +164,14 @@ export async function resolveLocation(
       const exact = await placeById(placeId);
       if (exact) return exact;
     }
-    if (!location || isPlaceholderLocation(location)) return null;
-    const [best] = await searchPlaces(location, 1);
-    return best ?? null;
+    if (!location) return null;
+    const query = withoutRemoteQualifier(location);
+    if (isPlaceholderLocation(query)) return null;
+    const [best] = await searchPlaces(query, 1);
+    // A guess at typed text only earns a pin when it is somewhere a person
+    // could show up. A place that was picked by id above is not second-guessed.
+    if (!best || isTooBroadToPin(best)) return null;
+    return best;
   } catch (error) {
     // Logged, not surfaced: the write it belongs to is still going through.
     console.warn('[geo] could not resolve location', { location, placeId, error });
@@ -195,6 +224,50 @@ export function isPlaceholderLocation(location: string): boolean {
     .replace(/\s+/g, ' ')
     .trim();
   return NOT_A_PLACE.has(normalized);
+}
+
+/**
+ * "Remote - United States" is how a posting says who may apply, not where the
+ * office is — and searched as written, the word is matched as a business name:
+ * that exact string comes back as "Remote USA Inc", an insurance agency at
+ * 17 State St, New York, and "Montreal (remote)" as a locksmith that programs
+ * car remotes. So the word is dropped before asking, and what is left is looked
+ * up on its own merits.
+ *
+ * Only at either end, and only when punctuation or "in" sets it apart, so
+ * "Remote Way, Austin" is still a street.
+ */
+const REMOTE = String.raw`(?:fully\s+|100%\s+)?remote`;
+const LEADING_REMOTE = new RegExp(String.raw`^\s*${REMOTE}\s*(?:[-–—,:;/|(]+|\b(?:in|within)\b)\s*`, 'i');
+const TRAILING_REMOTE = new RegExp(String.raw`\s*[-–—,:;/|(]+\s*${REMOTE}\s*\)?\s*$`, 'i');
+
+export function withoutRemoteQualifier(location: string): string {
+  let stripped = location.replace(TRAILING_REMOTE, '');
+  if (LEADING_REMOTE.test(stripped)) {
+    // The closing bracket of "Remote (Canada)" goes with the opening one.
+    stripped = stripped.replace(LEADING_REMOTE, '').replace(/\)\s*$/, '');
+  }
+  return stripped.trim() || location;
+}
+
+/**
+ * Places that are regions rather than addresses. Google pins them at their
+ * centroid — the United States is a field in Kansas, Canada is a lake in
+ * Nunavut — which is a marker somewhere nobody works. A city is as coarse as a
+ * pin gets; the text is still stored either way.
+ *
+ * The type list alone is not enough: "Americas" comes back as a
+ * `colloquial_area`, the same type as "Bay Area", with its centroid in
+ * Saskatchewan. So size is checked too. Metro areas measure two to four
+ * degrees across (New York's is 3.6); the smallest thing worth refusing is
+ * several times that.
+ */
+const TOO_BROAD = new Set(['continent', 'country', 'administrative_area_level_1']);
+const MAX_PIN_SPAN_DEGREES = 5;
+
+export function isTooBroadToPin(place: Pick<Place, 'types' | 'spanDegrees'>): boolean {
+  if (place.types.some((type) => TOO_BROAD.has(type))) return true;
+  return place.spanDegrees !== null && place.spanDegrees > MAX_PIN_SPAN_DEGREES;
 }
 
 export type MapMarker = { lat: number; lng: number; label?: string };
