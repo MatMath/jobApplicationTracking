@@ -20,7 +20,9 @@ The tracker's tools come from the `job-tracker` MCP server
 
 1. **The posting.** `get_application` (find the id with `search_applications`
    when given a name). Use its `description`; if that is empty, the attached
-   `job_posting` document via `get_document`. With neither, ask for the posting.
+   `job_posting` document via `get_document`. A posting saved as a PDF comes
+   back as a link only: download it and Read it. With neither, ask for the
+   posting.
 
 2. **The CV repo.** `$CV_REPO` if set; otherwise the session directory that
    holds an `index.html` and a `CLAUDE.md` titled "CV source"; otherwise ask
@@ -37,7 +39,9 @@ The tracker's tools come from the `job-tracker` MCP server
 1. **List what the posting asks for**, one line each, in the posting's own
    words: required skills and experience, preferred ones, the main
    responsibilities, and the constraints (location, work authorisation,
-   seniority, team size, domain). Keep required and preferred apart.
+   seniority, team size, domain). Keep required and preferred apart. Split a
+   compound line into its parts — "Docker and Kubernetes" is two items, and
+   the CV may cover one.
 
 2. **Place every item in one of four groups**, quoting the CV line that
    decides it:
@@ -52,9 +56,16 @@ The tracker's tools come from the `job-tracker` MCP server
    Match on substance, not on keywords: "led a team of 12" covers "people
    leadership"; "used React" does not cover "designed a design system".
 
+   A neighbouring technology is not a match. GCP does not cover AWS, and a
+   batch scheduler does not cover event streaming. Class the item Missing and
+   name the neighbour beside it: it is the honest thing the CV can say, and
+   the first thing to ask the user about.
+
 3. **Show the user the table**, required items first, then a short honest
    read: how strong the match is, anything that looks disqualifying, and
    whether the role is worth a tailored CV. Do not round a weak match up.
+   Include what the posting says about itself that bears on applying at all:
+   the date it was posted, and the salary if one is stated.
 
 4. **Ask about each Missing item**, in one batch: do they have it, and if so
    the specifics — where, when, what scale, what result. "Missing" means
@@ -71,7 +82,19 @@ The tracker's tools come from the `job-tracker` MCP server
    (Missing items updated by their answers), the read from step 3, and the
    commit hashes from step 5.
 
-7. **Next step**: `/cv-tailor <application id>`.
+7. **If the CV as it stands does not serve this posting** — anything
+   required is Undersold, Hidden, or Missing-but-confirmed — create the
+   application's branch in the CV repo now, from the bank branch, and say so:
+
+   ```bash
+   git -C <cv repo> switch -c apply/<company>-<role> master
+   ```
+
+   Create it and nothing more. What changes on it is `cv-tailor`'s to
+   propose and the user's to approve. If everything required is Shown, there
+   is no branch: the generic CV is the one to send.
+
+8. **Next step**: `/cv-tailor <application id>`.
 
 ## Rules
 

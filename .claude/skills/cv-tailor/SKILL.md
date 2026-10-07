@@ -26,8 +26,8 @@ The tracker's tools come from the `job-tracker` MCP server
   `CLAUDE.md` before anything else. Its rules bind every edit here: hide never
   delete, nothing invented, employers/titles/dates fixed, keyword footer backed
   by the body, new facts on the bank branch first.
-- The repo must be on its bank branch (`master`) with a clean working tree. If
-  it is not, stop and say what is there.
+- The repo must be on its bank branch (`master`) or on this application's
+  branch, with a clean working tree. If it is not, stop and say what is there.
 
 ## 1. Propose, then wait
 
@@ -51,6 +51,10 @@ lacks is committed to the bank branch as `hidden` content first.
 ```bash
 git -C <cv repo> switch -c apply/<company>-<role> master
 ```
+
+`job-fit` creates this branch when it finds the generic CV does not serve the
+posting. If it exists, switch to it instead; if it has fallen behind the bank
+branch, merge that in first so newly banked facts are there.
 
 Apply the agreed changes to `index.html` and commit. Toggle `hidden`; do not
 delete or move blocks out of the file.

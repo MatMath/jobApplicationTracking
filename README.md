@@ -329,7 +329,7 @@ later or run on its own.
 | Skill | What it does | Where it stops for you |
 |---|---|---|
 | `/job-capture <url>` | Reads the posting in Chrome, checks it is not already tracked, saves it as a wishlist application with the posting as a file | — |
-| `/job-fit <application>` | Sorts what the posting asks for into shown on the CV, undersold, in the CV repo but hidden, and missing | Asks about each missing item |
+| `/job-fit <application>` | Sorts what the posting asks for into shown on the CV, undersold, in the CV repo but hidden, and missing; opens the application's branch in the CV repo when the generic CV will not do | Asks about each missing item |
 | `/cv-tailor <application>` | Proposes the changes, edits the CV on its own branch, renders the PDF, checks it, files it against the application | Before editing, and before filing |
 | `/job-apply <application>` | Plans every field of the form, fills it in Chrome, uploads the PDF | Before filling, and before submit |
 | `/manager-outreach <application>` | Finds who is likely hiring, drafts a note, types it into the LinkedIn dialog | On who, on the text, and before send |
