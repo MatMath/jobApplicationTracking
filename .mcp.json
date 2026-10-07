@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "job-tracker": {
+      "type": "http",
+      "url": "${JOB_TRACKER_MCP_URL:-http://localhost:3000/api/mcp}"
+    }
+  }
+}

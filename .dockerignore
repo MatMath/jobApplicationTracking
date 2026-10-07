@@ -13,6 +13,7 @@ node_modules
 .next-build
 .git
 .claude
+.mcp.json
 *.tsbuildinfo
 next-env.d.ts
 coverage

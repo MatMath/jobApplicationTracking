@@ -5,6 +5,7 @@
 .gcloudignore
 .git
 .claude
+.mcp.json
 .env
 .env.*
 !.env.example
