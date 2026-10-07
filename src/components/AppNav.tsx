@@ -32,6 +32,9 @@ export function AppNav({ current }: { current: (typeof tabs)[number]['href'] }) 
         >
           Add application
         </Link>
+        <Link href="/settings/documents" className="text-sm underline opacity-60">
+          Documents
+        </Link>
         <Link href="/settings/connections" className="text-sm underline opacity-60">
           Connected apps
         </Link>

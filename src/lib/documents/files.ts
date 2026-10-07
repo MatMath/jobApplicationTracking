@@ -161,9 +161,7 @@ export function checkFile(fileName: string, bytes: Uint8Array): FileVerdict {
   if (bytes.byteLength > MAX_DOCUMENT_BYTES) {
     return {
       ok: false,
-      // In KB, rounded up: a file one byte over would otherwise read "1 MB; the
-      // limit is 1 MB".
-      error: `"${name}" is ${Math.ceil(bytes.byteLength / 1024).toLocaleString('en')} KB; the limit is ${formatBytes(MAX_DOCUMENT_BYTES)} (1,024 KB) per file.`,
+      error: tooLargeMessage(name, bytes.byteLength),
     };
   }
 
@@ -183,6 +181,15 @@ export function checkFile(fileName: string, bytes: Uint8Array): FileVerdict {
     mimeType: binary?.mimeType ?? TEXT_TYPES[extension] ?? 'text/plain',
     isText: !binary,
   };
+}
+
+/**
+ * Shared with the upload form, which says the same thing before sending. In KB,
+ * rounded up: a file one byte over would otherwise read "1 MB; the limit is
+ * 1 MB".
+ */
+export function tooLargeMessage(name: string, size: number): string {
+  return `"${name}" is ${Math.ceil(size / 1024).toLocaleString('en')} KB; the limit is ${formatBytes(MAX_DOCUMENT_BYTES)} (1,024 KB) per file.`;
 }
 
 /** Whether a stored type can be read back as text, e.g. to hand to a model. */

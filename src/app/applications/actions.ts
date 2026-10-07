@@ -150,9 +150,11 @@ export async function addNote(
 }
 
 /**
- * Deletes an application. Meetings, notes, status history, and documents go
- * with it via ON DELETE CASCADE; the company row stays, since other
- * applications may point at it and it keeps its website for the logo.
+ * Deletes an application. Meetings, notes, status history and its document
+ * attachments go with it via ON DELETE CASCADE. Two things stay: the company
+ * row, since other applications may point at it and it keeps its website for
+ * the logo; and the files themselves, which live in the library and may be
+ * attached elsewhere — the generic CV always is.
  */
 export async function deleteApplication(formData: FormData): Promise<void> {
   const supabase = await createClient();

@@ -7,8 +7,10 @@ import { updateApplication } from '../actions';
 import { MeetingSection } from './MeetingSection';
 import { DeleteApplicationButton } from './DeleteApplicationButton';
 import { NotesSection, type NoteRow } from './NotesSection';
+import { DocumentsSection } from './DocumentsSection';
 import { todayISO, formatDate } from '@/lib/date';
-import { STATUS_LABELS, type MeetingRow } from '@/lib/types';
+import { listApplicationDocuments, listDocuments } from '@/lib/documents/write';
+import { MEETING_PURPOSE_LABELS, STATUS_LABELS, type MeetingRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +32,7 @@ export default async function ApplicationDetailPage({
   // is the behaviour we want: no existence oracle.
   if (error || !application) notFound();
 
-  const [{ data: meetings }, { data: history }, { data: notes }] = await Promise.all([
+  const [{ data: meetings }, { data: history }, { data: notes }, attached, library] = await Promise.all([
     supabase
       .from('meetings')
       .select('*')
@@ -46,7 +48,18 @@ export default async function ApplicationDetailPage({
       .select('id, content, created_at')
       .eq('application_id', id)
       .order('created_at', { ascending: false }),
+    listApplicationDocuments(supabase, application.user_id, id),
+    listDocuments(supabase, application.user_id),
   ]);
+
+  // Named the way the rounds list numbers them, so a file filed under "#2
+  // Technical" can be matched to the round by eye.
+  const rounds = ((meetings ?? []) as unknown as MeetingRow[]).map((m, i) => ({
+    id: m.id,
+    label: `#${i + 1} ${m.purpose ? (MEETING_PURPOSE_LABELS[m.purpose] ?? m.purpose) : 'Round'}${
+      m.scheduled_at ? ` · ${formatDate(m.scheduled_at as unknown as string)}` : ''
+    }`,
+  }));
 
   const company = application.companies as {
     id: string;
@@ -95,6 +108,13 @@ export default async function ApplicationDetailPage({
       <MeetingSection
         applicationId={id}
         meetings={(meetings ?? []) as unknown as MeetingRow[]}
+      />
+
+      <DocumentsSection
+        applicationId={id}
+        attached={attached.data ?? []}
+        library={library.data ?? []}
+        rounds={rounds}
       />
 
       <NotesSection applicationId={id} notes={(notes ?? []) as NoteRow[]} />
