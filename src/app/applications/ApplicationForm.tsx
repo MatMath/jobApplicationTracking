@@ -91,7 +91,7 @@ export function ApplicationForm({
       </Field>
 
       <Field label="Job description">
-        <textarea name="description" rows={4} defaultValue={v.description ?? ''} className={field} />
+        <textarea name="description" rows={20} defaultValue={v.description ?? ''} className={field} />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
