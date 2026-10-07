@@ -2,7 +2,16 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { applications, companies, contacts, meetings, notes, profiles } from './schema';
+import {
+  applicationDocuments,
+  applications,
+  companies,
+  contacts,
+  documents,
+  meetings,
+  notes,
+  profiles,
+} from './schema';
 
 /**
  * schema.ts and the SQL have to describe the same database.
@@ -76,7 +85,17 @@ function columnNames(table: Parameters<typeof getTableColumns>[0]): string[] {
   return Object.values(getTableColumns(table)).map((c) => c.name);
 }
 
-const TABLES = { applications, companies, contacts, meetings, notes, profiles };
+const TABLES = {
+  applications,
+  companies,
+  contacts,
+  meetings,
+  notes,
+  profiles,
+  documents,
+  // Keyed by the SQL name: the parser looks the table up by it.
+  application_documents: applicationDocuments,
+};
 
 describe('schema.ts and supabase/*.sql agree', () => {
   const sql = allSql();
