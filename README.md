@@ -319,10 +319,94 @@ Then: *"Add this job to my tracker: &lt;url&gt;"*.
 > that at your deployed origin (not `localhost:3000`) before connecting Claude
 > to the deployed app.
 
+## Application skills (Claude Code)
+
+Five skills in [`.claude/skills/`](.claude/skills) take one posting from a URL
+to a sent application, in Claude Code on your own machine. Each is a slash
+command, each leaves its result in the tracker, and so each can be picked up
+later or run on its own.
+
+| Skill | What it does | Where it stops for you |
+|---|---|---|
+| `/job-capture <url>` | Reads the posting in Chrome, checks it is not already tracked, saves it as a wishlist application with the posting as a file | — |
+| `/job-fit <application>` | Sorts what the posting asks for into shown on the CV, undersold, in the CV repo but hidden, and missing | Asks about each missing item |
+| `/cv-tailor <application>` | Proposes the changes, edits the CV on its own branch, renders the PDF, checks it, files it against the application | Before editing, and before filing |
+| `/job-apply <application>` | Plans every field of the form, fills it in Chrome, uploads the PDF | Before filling, and before submit |
+| `/manager-outreach <application>` | Finds who is likely hiring, drafts a note, types it into the LinkedIn dialog | On who, on the text, and before send |
+
+**You click the button.** No skill submits an application or sends a message.
+Sign-ins, account creation, CAPTCHAs and consent boxes are yours too. The
+skills say this to the model in as many words; it is also why they drive your
+real Chrome rather than a headless one — you are meant to be watching.
+
+**Why these are not features of the app.** [PLAN.md](PLAN.md) rules LLM
+features out of the tracker, and the deployed service holds no model key. The
+tracker stays a store with an MCP interface; the reasoning happens in the
+client that is already signed in as you.
+
+### Setup
+
+1. **The tracker, as an MCP server.** [`.mcp.json`](.mcp.json) declares it as
+   `job-tracker`, at `JOB_TRACKER_MCP_URL` if that is set and otherwise at
+   `http://localhost:3000/api/mcp`, which needs `npm run dev` running. For the
+   deployed app, set `JOB_TRACKER_MCP_URL=https://<your-service>/api/mcp` in
+   the environment Claude Code starts from. Approve the server when Claude
+   Code asks, and sign in once: it is the same OAuth flow and consent screen
+   as [Connect Claude](#connect-claude-mcp).
+2. **The CV repo.** The skills expect a git repo whose `index.html` is the CV
+   and whose `CLAUDE.md` is titled "CV source" and states the contract: an
+   element with `hidden` is kept but not shown, content is hidden rather than
+   deleted, nothing is written that the repo or you did not supply, and each
+   application gets a branch `apply/<company>-<role>`. Add that repo to the
+   session as a second directory, or set `CV_REPO` to its path.
+3. **Chrome**, with the Claude in Chrome extension, signed in to the job
+   boards you use, to LinkedIn, and to the tracker.
+
+Start the session in this repo so the skills load.
+
+### The CV repo is the bank
+
+There is no database of experience and no retrieval step. One person's career
+fits in a model's context, so the CV repo holds all of it and `hidden` marks
+what a given CV leaves out. `job-fit` reads the hidden parts as well as the
+visible ones, which is what lets it tell "you have this, the CV does not show
+it" from "nothing here supports this". A fact you supply while answering is
+committed to the repo's main branch before any application branch uses it, so
+the next application starts with it.
+
+The PDF is `index.html` printed by headless Chrome
+([`render.sh`](.claude/skills/cv-tailor/scripts/render.sh)). The script
+reports the page count; the skill then reads the PDF page by page, because a
+count of two says nothing about a job title stranded at the foot of page one.
+
+### What ends up in the tracker
+
+Per application: the posting (`job_posting`), the fit analysis and the
+tailored CV's HTML source (`other`), the PDF that was sent (`resume`), and
+notes for the branch and commit, the submission, and any outreach. The commit
+that was sent is also tagged `applied/<company>-<date>` in the CV repo.
+
+Once, and then revised: `Application answers.md` in the library — work
+authorisation, notice period, salary expectation and the other answers every
+form asks for. `job-apply` fills from it, asks for what it lacks, and offers
+to save the new answers as a new file.
+
+### Known gaps
+
+- **The PDF goes in through the web page.** `upload_document` takes base64,
+  and a model cannot reproduce a PDF's bytes, so `cv-tailor` uses the
+  Documents section of the application's page in Chrome.
+- **No contact tools.** `contacts` has a `hiring_manager` kind and no MCP
+  tool, so outreach is logged as a note, follow-up date included.
+- **No general update tool.** `platform_applied` can only be set when the
+  application is created; `job-apply` records where it was submitted in a note.
+
 ## Layout
 
 | Path | What |
 |---|---|
+| `.claude/skills/` | The application skills, and the script that renders the CV |
+| `.mcp.json` | Tells Claude Code where the tracker's MCP server is |
 | `src/db/schema.ts` | Single source of truth for the data model |
 | `src/db/scope.ts` | Ownership predicate for Drizzle queries, which bypass RLS |
 | `supabase/bootstrap.sql` | One-time DDL + RLS, mirrors `schema.ts` |
