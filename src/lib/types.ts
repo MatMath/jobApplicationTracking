@@ -74,6 +74,15 @@ export const MEETING_OUTCOME_LABELS: Record<string, string> = {
   failed: 'Did not pass',
 };
 
+export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  resume: 'Résumé',
+  cover_letter: 'Cover letter',
+  job_posting: 'Job posting',
+  assignment: 'Assignment',
+  assignment_submission: 'Assignment submission',
+  other: 'Other',
+};
+
 export const REMOTE_LABELS: Record<string, string> = {
   remote: 'Remote',
   hybrid: 'Hybrid',

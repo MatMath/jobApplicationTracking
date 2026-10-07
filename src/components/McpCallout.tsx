@@ -39,8 +39,8 @@ export function McpNote({ origin }: { origin: string }) {
           MCP
         </a>
         , so an assistant can file a job posting for you from its URL, search
-        what you have applied to, and log interview rounds — without you filling
-        the form. Connect it by adding <McpEndpoint origin={origin} /> as a
+        what you have applied to, log interview rounds, and keep the CV and
+        cover letter you sent with each one — without you filling the form. Connect it by adding <McpEndpoint origin={origin} /> as a
         custom connector. Sign in first; you approve the connection yourself.
       </p>
     </div>
@@ -117,6 +117,9 @@ export function McpGuide({ origin }: { origin: string }) {
         <li>&ldquo;I got a phone screen at Acme — move it along.&rdquo;</li>
         <li>&ldquo;Log today&rsquo;s technical round: they asked me to design a rate limiter.&rdquo;</li>
         <li>&ldquo;The Acme role is at their Toronto office, not Montreal.&rdquo;</li>
+        <li>&ldquo;Save this cover letter and attach it to my Shopify application.&rdquo;</li>
+        <li>&ldquo;Which CV did I send Acme?&rdquo;</li>
+        <li>&ldquo;Here is the take-home brief for the technical round — file it.&rdquo;</li>
       </ul>
 
       <p className="mt-4 text-xs opacity-50">

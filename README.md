@@ -21,7 +21,12 @@ data model.
    An already-provisioned database instead needs the numbered files it has
    not yet run, in order: [`002_profiles.sql`](supabase/002_profiles.sql),
    [`003_dashboard.sql`](supabase/003_dashboard.sql),
-   [`004_application_location.sql`](supabase/004_application_location.sql).
+   [`004_application_location.sql`](supabase/004_application_location.sql),
+   [`005_documents.sql`](supabase/005_documents.sql).
+
+   `005` is the exception to "bootstrap creates everything": it also creates
+   the private storage bucket and its policies, so run it after `bootstrap.sql`
+   on a fresh project too.
 
    Skipping one shows up at runtime, not at build time — saving an application
    against a database missing `004` fails with *"Could not find the
@@ -201,6 +206,47 @@ yet, or the text was a placeholder — keeps its text and simply has no pin. Sav
 that application again and the address is resolved on the way through, so there
 is nothing to run and nothing to remember.
 
+## Documents
+
+A record of what was sent: the CV and cover letter that went with each
+application, the posting as a file, any take-home assignment and what was
+handed back. Files are kept in a library at `/settings/documents` and
+*attached* to applications, so the generic CV is one file cited by many.
+
+**Files never change.** There is no edit, in the app or in the policies behind
+it. A revised CV is uploaded as a new file and made the default, and every
+application that went out with the old one keeps pointing at it. That is what
+makes "which CV did they get" answerable a year later.
+
+**The default résumé** is the generic CV. The first résumé uploaded becomes it;
+change it from the library. It is attached automatically when an application
+leaves the wishlist — created as applied, or moved there later — unless that
+application already has a résumé. If a tailored one was sent, attach it and
+detach the generic one.
+
+**What is accepted**: PDF, Word (`.doc`, `.docx`), OpenDocument (`.odt`), RTF,
+and plain text of any kind — Markdown, CSV, JSON, source code. **1 MB per
+file.** Images, audio, video and archives are refused: the bytes live in
+Supabase Storage on a free tier, and one photo outweighs every CV you will
+write. The type is decided from the file's extension and then checked against
+its first bytes, so a renamed image is not a `.txt`. A take-home that arrives
+as a zip has to be attached as its individual source files.
+
+The limit is enforced three times, each for a different reason:
+`src/lib/documents/files.ts` so the refusal can explain itself, the bucket
+(`file_size_limit`, `allowed_mime_types`) so an upload sent straight to
+Storage cannot skip it, and a `CHECK` on `documents.size_bytes`.
+
+Deleting a file is refused while any application cites it — detach it there
+first. Deleting an application removes its attachments and leaves the files in
+the library.
+
+Storage is a private Supabase bucket named `documents`, created by
+[`005_documents.sql`](supabase/005_documents.sql). Objects are keyed
+`<user id>/<document id>.<ext>` and scoped by the same `auth.uid()` policies as
+the tables, so there are no storage credentials to configure. Downloads go
+through `/api/documents/<id>/download`, which signs a link for one minute.
+
 ## Connect Claude (MCP)
 
 The app exposes an MCP server at `/api/mcp`, so Claude can fill the tracker from
@@ -208,6 +254,15 @@ a job posting: give it a URL and it reads the page itself, then calls
 `create_application` with the fields it extracted. It can also search, move an
 application along the pipeline, add notes and interview rounds, and resolve an
 office address to a map pin (`lookup_location`, `set_application_location`).
+
+It also keeps the paperwork: `upload_document` stores a file (text passed
+directly, or base64 for a PDF it holds the bytes of), `list_documents` and
+`get_document` read the library, `attach_document` / `detach_document` record
+which files went with which application, and `set_default_resume` names the
+generic CV. The same type and size rules apply as in the web form — see
+[Documents](#documents). There is deliberately no tool that deletes a file.
+The server also sends `instructions` at initialization describing how the
+document tools fit together, since no single tool description can.
 
 Authorization is Supabase Auth's own OAuth 2.1 server, not something this app
 implements — Claude discovers it via `/.well-known/oauth-protected-resource`,
@@ -274,6 +329,10 @@ Then: *"Add this job to my tracker: &lt;url&gt;"*.
 | `src/db/index.ts` | Drizzle client |
 | `drizzle/` | Generated migrations once Node is available — commit, never edit |
 | `src/lib/applications/` | Validation and write logic, shared by the form and the MCP tools |
+| `src/lib/documents/` | What may be uploaded, and every read and write of the file library |
+| `src/app/settings/documents/` | The library page, and the actions the application page shares |
+| `src/app/api/documents/[id]/download/` | Signs a short-lived link to a private file |
+| `supabase/005_documents.sql` | Document tables, the storage bucket, and their policies |
 | `src/lib/geo/` | Places lookup, map URLs, and the pin grouping the map and its list share |
 | `src/app/api/places/search/` | Address suggestions, proxied so the key stays server-side |
 | `src/app/api/map/applications/` | The dashboard map, fetched as an image for the same reason |

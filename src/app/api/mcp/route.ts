@@ -1,6 +1,6 @@
 import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import { verifyToken } from '@/lib/mcp/auth';
-import { registerTools } from '@/lib/mcp/tools';
+import { SERVER_INSTRUCTIONS, registerTools } from '@/lib/mcp/tools';
 import { publicOrigin } from '@/lib/origin';
 
 /**
@@ -29,7 +29,10 @@ async function handle(request: Request): Promise<Response> {
   const origin = publicOrigin(request.headers);
 
   const handler = createMcpHandler((server) => registerTools(server, origin), {
-    serverInfo: { name: 'job-tracker', version: '1.0.0' },
+    serverInfo: { name: 'job-tracker', version: '1.1.0' },
+    // How the tools fit together — in particular how documents relate to
+    // applications, which no one tool description can say on its own.
+    instructions: SERVER_INSTRUCTIONS,
   });
 
   return withMcpAuth(handler, verifyToken, {

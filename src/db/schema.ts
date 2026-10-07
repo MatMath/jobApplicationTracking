@@ -49,7 +49,14 @@ export const MEETING_PURPOSES = [
   'other',
 ] as const;
 export const MEETING_OUTCOMES = ['pending', 'passed', 'failed'] as const;
-export const DOCUMENT_TYPES = ['resume', 'cover_letter', 'other'] as const;
+export const DOCUMENT_TYPES = [
+  'resume',
+  'cover_letter',
+  'job_posting',
+  'assignment',
+  'assignment_submission',
+  'other',
+] as const;
 
 /** Statuses that mean the company got back to us in some form. */
 export const RESPONDED_STATUSES = [
@@ -65,6 +72,7 @@ export type Outcome = (typeof OUTCOMES)[number];
 export type RemoteType = (typeof REMOTE_TYPES)[number];
 export type ContactKind = (typeof CONTACT_KINDS)[number];
 export type MeetingPurpose = (typeof MEETING_PURPOSES)[number];
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 /**
  * Supabase Auth owns `auth.users` — it is created and managed by the platform,
@@ -98,6 +106,12 @@ export const profiles = pgTable('profiles', {
   email: text('email'),
   fullName: text('full_name'),
   avatarUrl: text('avatar_url'),
+  // The generic CV: the one attached to an application unless a tailored one
+  // is. A pointer rather than a flag on `documents` so there can only be one,
+  // and replacing it is a single write. Its foreign key is declared in SQL
+  // only (supabase/005_documents.sql) — `documents` is defined further down
+  // this file, and the two tables would otherwise reference each other.
+  defaultResumeId: uuid('default_resume_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -198,8 +212,9 @@ export const applications = pgTable(
     salaryMin: integer('salary_min'),
     salaryMax: integer('salary_max'),
     salaryCurrency: text('salary_currency').default('CAD'),
-    // The old system stored the cover letter inline as text; `documents` covers
-    // uploaded file versions. Both are useful, so both exist.
+    // The old system stored the cover letter inline as text; an attached file
+    // (see `applicationDocuments`) is the record of what was actually sent.
+    // Both are useful — the text is searchable — so both exist.
     coverLetter: text('cover_letter'),
     status: text('status').$type<Status>().notNull().default('wishlist'),
     outcome: text('outcome').$type<Outcome>(),
@@ -292,8 +307,62 @@ export const notes = pgTable(
   (t) => [index('notes_application_idx').on(t.applicationId)],
 );
 
+/**
+ * The file library. One row per uploaded file, and a row never changes once
+ * written: there is no update path, in the code or in the storage policies.
+ *
+ * That is the whole point of the table. "Which CV did I send them" is only
+ * answerable if the file an application points at cannot be edited afterwards,
+ * so a revised CV is a new row rather than a new version of an old one, and
+ * every application keeps pointing at exactly what was sent.
+ *
+ * A file belongs to the user, not to an application — the generic CV is one
+ * file attached to many. `application_documents` is the attachment.
+ *
+ * The bytes live in Supabase Storage, in the private `documents` bucket, at
+ * `storage_path`. A path rather than a URL because a private bucket has no
+ * stable URL; downloads are signed per request.
+ */
 export const documents = pgTable(
   'documents',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    fileName: text('file_name').notNull(),
+    storagePath: text('storage_path').notNull(),
+    type: text('type').$type<DocumentType>().notNull().default('other'),
+    // What the server decided the file is, from its extension and first bytes —
+    // never the browser's claim. See lib/documents/files.ts.
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    // Content hash. Uploading the same bytes twice resolves to the row already
+    // there, which is what lets a caller say "attach this file" without first
+    // working out whether it is already in the library.
+    sha256: text('sha256').notNull(),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('documents_user_idx').on(t.userId),
+    unique('documents_storage_path_unique').on(t.storagePath),
+    unique('documents_user_sha256_unique').on(t.userId, t.sha256),
+  ],
+);
+
+/**
+ * A file attached to an application: the CV and cover letter that were sent,
+ * the posting as a PDF, the take-home brief and what was handed back.
+ *
+ * `document_id` is ON DELETE RESTRICT. A file that some application records as
+ * "what I sent" cannot be deleted out from under it; it has to be detached
+ * first, which is a decision rather than a side effect.
+ *
+ * `meeting_id` is optional and ties an assignment to the interview round that
+ * set it. It is SET NULL: removing a round should not take the brief with it.
+ */
+export const applicationDocuments = pgTable(
+  'application_documents',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
@@ -302,10 +371,15 @@ export const documents = pgTable(
     applicationId: uuid('application_id')
       .notNull()
       .references(() => applications.id, { onDelete: 'cascade' }),
-    fileName: text('file_name').notNull(),
-    fileUrl: text('file_url').notNull(),
-    type: text('type').$type<(typeof DOCUMENT_TYPES)[number]>(),
-    uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
+    documentId: uuid('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'restrict' }),
+    meetingId: uuid('meeting_id').references(() => meetings.id, { onDelete: 'set null' }),
+    attachedAt: timestamp('attached_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index('documents_application_idx').on(t.applicationId)],
+  (t) => [
+    unique('application_documents_unique').on(t.applicationId, t.documentId),
+    index('application_documents_application_idx').on(t.applicationId),
+    index('application_documents_document_idx').on(t.documentId),
+  ],
 );

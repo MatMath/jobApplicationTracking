@@ -1,5 +1,6 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import {
+  applicationDocuments,
   applications,
   companies,
   contacts,
@@ -15,6 +16,7 @@ import {
  * predicate rather than a join back through `applications`.
  */
 const OWNED_TABLES = {
+  applicationDocuments,
   applications,
   companies,
   contacts,

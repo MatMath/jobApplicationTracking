@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { RESPONDED_STATUSES, type Status } from '@/db/schema';
 import { fromDateInput } from '@/lib/date';
+import { attachDefaultResume } from '@/lib/documents/write';
 import { resolveLocation } from '@/lib/geo/places';
 import type {
   ApplicationInput,
@@ -189,6 +190,9 @@ export async function createApplication(
     .from('status_history')
     .insert({ user_id: userId, application_id: created.id, status: input.status });
 
+  // Recorded as already sent, so record what it was sent with.
+  if (input.status !== 'wishlist') await attachDefaultResume(supabase, userId, created.id);
+
   return ok(created.id as string);
 }
 
@@ -210,6 +214,15 @@ function lifecycleTimestamps(current: Lifecycle, status: string, now: string) {
     first_response_at: current.first_response_at ?? (RESPONDED.has(status) ? now : null),
     closed_at: CLOSED.has(status) ? (current.closed_at ?? now) : null,
   };
+}
+
+/**
+ * The moment an application goes out: it leaves the wishlist. That is when the
+ * default résumé is attached, if nothing more specific already is — see
+ * attachDefaultResume for why it only ever fills a gap.
+ */
+function wasSent(from: string, to: string): boolean {
+  return from === 'wishlist' && to !== 'wishlist';
 }
 
 async function loadCurrent(
@@ -278,6 +291,9 @@ export async function updateApplication(
       .from('status_history')
       .insert({ user_id: userId, application_id: input.id, status: input.status });
   }
+  if (wasSent(current.data.status, input.status)) {
+    await attachDefaultResume(supabase, userId, input.id);
+  }
 
   return ok(null);
 }
@@ -320,6 +336,9 @@ export async function changeStatus(
     await supabase
       .from('status_history')
       .insert({ user_id: userId, application_id: input.id, status: input.status });
+  }
+  if (wasSent(current.data.status, input.status)) {
+    await attachDefaultResume(supabase, userId, input.id);
   }
 
   return ok(null);
@@ -418,7 +437,8 @@ export async function getApplication(supabase: SupabaseClient, userId: string, i
       `${SUMMARY_COLUMNS}, description, cover_letter, application_type, rejection_reason,
        meetings (id, scheduled_at, purpose, participants, challenge, outcome, notes),
        notes (id, content, created_at),
-       status_history (status, changed_at)`,
+       status_history (status, changed_at),
+       application_documents (meeting_id, attached_at, documents (id, file_name, type, mime_type, size_bytes, uploaded_at))`,
     )
     .eq('id', id)
     .eq('user_id', userId)

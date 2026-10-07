@@ -117,16 +117,36 @@ create table if not exists public.notes (
 create index if not exists notes_application_idx on public.notes (application_id);
 
 -- ---------------------------------------------------------------- documents
+-- The file library: one immutable row per uploaded file, owned by the user
+-- rather than by an application. See supabase/005_documents.sql for the bucket,
+-- its policies, and why none of this has an update path.
 create table if not exists public.documents (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  file_name     text not null,
+  storage_path  text not null,
+  type          text not null default 'other',
+  mime_type     text not null,
+  size_bytes    integer not null,
+  sha256        text not null,
+  uploaded_at   timestamptz not null default now(),
+  constraint documents_storage_path_unique unique (storage_path),
+  constraint documents_user_sha256_unique unique (user_id, sha256)
+);
+create index if not exists documents_user_idx on public.documents (user_id);
+
+-- ---------------------------------------------------- application_documents
+create table if not exists public.application_documents (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid not null references auth.users (id) on delete cascade,
   application_id  uuid not null references public.applications (id) on delete cascade,
-  file_name       text not null,
-  file_url        text not null,
-  type            text,
-  uploaded_at     timestamptz not null default now()
+  document_id     uuid not null references public.documents (id) on delete restrict,
+  meeting_id      uuid references public.meetings (id) on delete set null,
+  attached_at     timestamptz not null default now(),
+  constraint application_documents_unique unique (application_id, document_id)
 );
-create index if not exists documents_application_idx on public.documents (application_id);
+create index if not exists application_documents_application_idx on public.application_documents (application_id);
+create index if not exists application_documents_document_idx on public.application_documents (document_id);
 
 -- ------------------------------------------------------- updated_at trigger
 -- defaults only fire on insert; without this, updated_at never moves.
@@ -147,12 +167,15 @@ create trigger applications_touch_updated_at
 -- Without this, the publishable key would let any authenticated user read every
 -- other user's rows. Each table carries user_id directly, so the check is one
 -- indexed comparison rather than a join back through applications.
+--
+-- documents and application_documents are not in this list: their policies are
+-- narrower than "owner may do anything" and live in 005_documents.sql.
 do $$
 declare t text;
 begin
   foreach t in array array[
     'companies', 'contacts', 'applications',
-    'meetings', 'status_history', 'notes', 'documents'
+    'meetings', 'status_history', 'notes'
   ]
   loop
     execute format('alter table public.%I enable row level security', t);
@@ -170,6 +193,8 @@ create table if not exists public.profiles (
   email       text,
   full_name   text,
   avatar_url  text,
+  -- The generic CV. See supabase/005_documents.sql.
+  default_resume_id uuid references public.documents (id) on delete set null,
   created_at  timestamptz not null default now()
 );
 
@@ -303,3 +328,8 @@ $$;
 -- return an empty dashboard to anon anyway; revoking makes that explicit.
 revoke all on function public.dashboard_stats(text) from public, anon;
 grant execute on function public.dashboard_stats(text) to authenticated;
+
+-- ---------------------------------------------------------------- documents
+-- The storage bucket, its policies and the tightened attachment policy are in
+-- 005_documents.sql, which is written to run cleanly after this file on a fresh
+-- project as well as on one provisioned before documents existed. Run it next.
