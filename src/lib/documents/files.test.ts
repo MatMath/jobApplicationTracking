@@ -69,7 +69,7 @@ describe('checkFile', () => {
 
     const verdict = checkFile('big.txt', over);
     expect(verdict.ok).toBe(false);
-    expect(!verdict.ok && verdict.error).toContain('limit is 1 MB');
+    expect(!verdict.ok && verdict.error).toContain('is 1,025 KB; the limit is 1 MB');
   });
 
   it('refuses an empty file and a file with no extension', () => {

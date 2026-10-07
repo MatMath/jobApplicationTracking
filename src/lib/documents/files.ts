@@ -93,7 +93,6 @@ export function extensionOf(fileName: string): string {
  */
 export function displayName(fileName: string): string {
   const base = fileName.replace(/\\/g, '/').split('/').pop() ?? '';
-  // eslint-disable-next-line no-control-regex
   const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, '').trim();
   return cleaned.slice(-200);
 }
@@ -162,7 +161,9 @@ export function checkFile(fileName: string, bytes: Uint8Array): FileVerdict {
   if (bytes.byteLength > MAX_DOCUMENT_BYTES) {
     return {
       ok: false,
-      error: `"${name}" is ${formatBytes(bytes.byteLength)}; the limit is ${formatBytes(MAX_DOCUMENT_BYTES)} per file.`,
+      // In KB, rounded up: a file one byte over would otherwise read "1 MB; the
+      // limit is 1 MB".
+      error: `"${name}" is ${Math.ceil(bytes.byteLength / 1024).toLocaleString('en')} KB; the limit is ${formatBytes(MAX_DOCUMENT_BYTES)} (1,024 KB) per file.`,
     };
   }
 
