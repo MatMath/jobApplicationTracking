@@ -135,6 +135,11 @@ export const companies = pgTable(
     lng: doublePrecision('lng'),
     website: text('website'),
     notes: text('notes'),
+    // What the company does, in at most five short labels ("Fintech", "AI",
+    // "Insurance") — see lib/applications/schema.ts for the limit. On the
+    // company, not the application: it is a fact about the employer, and two
+    // postings at one company should not need tagging twice.
+    tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

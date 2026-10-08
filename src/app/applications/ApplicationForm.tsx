@@ -12,6 +12,7 @@ import {
 import type { FormState } from './actions';
 import { toDateInput } from '@/lib/date';
 import { LocationField } from './LocationField';
+import { MAX_COMPANY_TAGS } from '@/lib/applications/tags';
 
 const initialState: FormState = { error: null };
 
@@ -39,6 +40,7 @@ function Field({
 export type ApplicationFormValues = Partial<ApplicationRow> & {
   company?: string;
   company_website?: string | null;
+  company_tags?: string[] | null;
 };
 
 export function ApplicationForm({
@@ -81,6 +83,18 @@ export function ApplicationForm({
           />
         </Field>
       </div>
+
+      <Field
+        label="Tags"
+        hint={`What the company does, comma-separated, up to ${MAX_COMPANY_TAGS}. Shared by every application at this company.`}
+      >
+        <input
+          name="company_tags"
+          placeholder="Fintech, AI, Insurance"
+          defaultValue={(v.company_tags ?? []).join(', ')}
+          className={field}
+        />
+      </Field>
 
       <Field label="Role *">
         <input name="role" required defaultValue={v.role ?? ''} className={field} />

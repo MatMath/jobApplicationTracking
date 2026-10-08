@@ -17,6 +17,7 @@ create table if not exists public.companies (
   lng         double precision,
   website     text,
   notes       text,
+  tags        text[] not null default '{}',
   created_at  timestamptz not null default now(),
   constraint companies_user_name_unique unique (user_id, name)
 );

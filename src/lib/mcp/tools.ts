@@ -12,6 +12,7 @@ import {
 import {
   applicationInput,
   applicationSearchInput,
+  companyTagsInput,
   formatIssues,
   locationChangeInput,
   meetingInput,
@@ -25,8 +26,10 @@ import {
   createApplication,
   getApplication,
   searchApplications,
+  setCompanyTags,
   setLocation,
 } from '@/lib/applications/write';
+import { MAX_COMPANY_TAGS, MAX_TAG_LENGTH } from '@/lib/applications/tags';
 import { ALLOWED_SUMMARY, MAX_DOCUMENT_BYTES, formatBytes } from '@/lib/documents/files';
 import {
   attachInput,
@@ -243,6 +246,36 @@ export function registerTools(server: McpServer, appOrigin: string) {
   );
 
   server.registerTool(
+    'set_company_tags',
+    {
+      title: 'Tag what the company does',
+      description:
+        'Replace the sector tags on the company behind an application already recorded — for ' +
+        'applications saved before tags existed, or to correct one that was wrong. Up to ' +
+        `${MAX_COMPANY_TAGS} short labels such as Fintech, AI, Insurance, Bank. The tags belong ` +
+        'to the company, so every application there shows the new ones. Pass an empty list to ' +
+        'clear them. Everything else about the application is left untouched.',
+      inputSchema: z.object({
+        id: z.uuid().describe('The application id, from search_applications.'),
+        tags: z.array(z.string()).max(MAX_COMPANY_TAGS).describe(`The full list, replacing what is there: at most ${MAX_COMPANY_TAGS} labels of ${MAX_TAG_LENGTH} characters or fewer.`),
+      }),
+    },
+    async (args, ctx) => {
+      const userId = callerId(ctx);
+      if (!userId) return problem('Could not identify the signed-in user.');
+
+      const parsed = companyTagsInput.safeParse(args);
+      if (!parsed.success) return problem(formatIssues(parsed.error));
+
+      const result = await setCompanyTags(createTokenClient(authToken(ctx)), userId, parsed.data);
+      if (result.error !== null) return problem(result.error);
+
+      const shown = result.data.length > 0 ? result.data.join(', ') : 'none';
+      return text(`Company tags set to: ${shown}.\n${linkTo(parsed.data.id)}`);
+    },
+  );
+
+  server.registerTool(
     'create_application',
     {
       title: 'Add a job application',
@@ -256,7 +289,9 @@ export function registerTools(server: McpServer, appOrigin: string) {
         'submitted. Unless the role is fully remote, an office location is required: call ' +
         'lookup_location first and pass the `locationPlaceId` it returns, so the application ' +
         'lands on the dashboard map at the right building rather than at whatever a city ' +
-        'name happens to match. When the status is anything past "wishlist", the default résumé ' +
+        'name happens to match. Tag the company with `companyTags`: up to five short sector ' +
+        'labels saying what it does (Fintech, AI, Insurance, Bank), so the person can tell at a ' +
+        'glance. When the status is anything past "wishlist", the default résumé ' +
         'is attached as the one that was sent; the result says which file that was. If a tailored ' +
         'résumé or a cover letter was sent instead, follow up with upload_document or ' +
         'attach_document.',
@@ -264,6 +299,7 @@ export function registerTools(server: McpServer, appOrigin: string) {
         company: z.string().describe('Employer name. Reused if already known, so prefer the plain name ("Shopify", not "Shopify Inc.").'),
         role: z.string().describe('Job title as the posting states it.'),
         companyWebsite: z.string().optional().describe("The employer's own site. Used to resolve their logo."),
+        companyTags: z.array(z.string()).max(MAX_COMPANY_TAGS).optional().describe(`What the company does, as at most ${MAX_COMPANY_TAGS} short labels of ${MAX_TAG_LENGTH} characters or fewer, e.g. ["Fintech", "Payments"] or ["Insurance", "AI"]. Name the sector or the product, not the role or the tech stack. Judge it from the posting's own account of the employer, and from what you know of them; leave it out rather than guess for a company you cannot place. Omitting it keeps any tags the company already has; the tags belong to the company, so every application there shows them.`),
         jobUrl: z.string().optional().describe('URL of the posting.'),
         description: z.string().optional().describe('The posting body as plain text. Include responsibilities and requirements; drop boilerplate and nav text.'),
         location: z.string().optional().describe('Office location as stated, e.g. "Montreal, QC" or "490 Rue De la Gauchetière O, Montreal". Required unless remoteType is "remote".'),

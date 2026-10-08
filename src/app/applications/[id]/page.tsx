@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { CompanyLogo } from '@/components/CompanyLogo';
+import { TagList } from '@/components/TagList';
 import { ApplicationForm } from '../ApplicationForm';
 import { updateApplication } from '../actions';
 import { MeetingSection } from './MeetingSection';
@@ -24,7 +25,7 @@ export default async function ApplicationDetailPage({
 
   const { data: application, error } = await supabase
     .from('applications')
-    .select('*, companies (id, name, website)')
+    .select('*, companies (id, name, website, tags)')
     .eq('id', id)
     .maybeSingle();
 
@@ -65,6 +66,7 @@ export default async function ApplicationDetailPage({
     id: string;
     name: string;
     website: string | null;
+    tags: string[];
   } | null;
 
   return (
@@ -80,6 +82,8 @@ export default async function ApplicationDetailPage({
           <p className="text-sm opacity-60">{company?.name}</p>
         </div>
       </header>
+
+      <TagList tags={company?.tags} className="mt-3" />
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         <span className="rounded bg-black/5 px-2 py-1 dark:bg-white/10">
@@ -130,6 +134,7 @@ export default async function ApplicationDetailPage({
               ...application,
               company: company?.name ?? '',
               company_website: company?.website ?? '',
+              company_tags: company?.tags ?? [],
             }}
           />
         </div>

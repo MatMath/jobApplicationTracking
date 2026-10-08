@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 const resolveLocation = vi.fn();
 vi.mock('@/lib/geo/places', () => ({ resolveLocation: (...args: unknown[]) => resolveLocation(...args) }));
 
-const { setLocation } = await import('./write');
+const { resolveCompanyId, setCompanyTags, setLocation } = await import('./write');
 
 /**
  * "The pin follows the address" is the rule the map depends on, and the one
@@ -125,5 +125,111 @@ describe('setLocation', () => {
     await setLocation(client, 'user-1', { id: ID, location: null, locationPlaceId: MONTREAL.placeId });
 
     expect(updates[0].location).toBe(MONTREAL.address);
+  });
+});
+
+/**
+ * Tags are the one company column the form and a tool both overwrite, so what a
+ * missing list means decides whether a second posting wipes the first one's
+ * tags. These pin that: null leaves them, an array replaces them.
+ */
+describe('resolveCompanyId tags', () => {
+  /** A company that exists, with whatever update the call makes captured. */
+  function fakeCompanies(existing: { id: string; website: string | null } | null) {
+    const updates: Record<string, unknown>[] = [];
+    const inserts: Record<string, unknown>[] = [];
+    const client = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            ilike: () => ({ maybeSingle: async () => ({ data: existing, error: null }) }),
+          }),
+        }),
+        update: (values: Record<string, unknown>) => {
+          updates.push(values);
+          return { eq: async () => ({ error: null }) };
+        },
+        insert: (values: Record<string, unknown>) => {
+          inserts.push(values);
+          return { select: () => ({ single: async () => ({ data: { id: 'new' }, error: null }) }) };
+        },
+      }),
+    } as unknown as SupabaseClient;
+    return { client, updates, inserts };
+  }
+
+  it('leaves a known company\'s tags alone when none are sent', async () => {
+    const { client, updates } = fakeCompanies({ id: 'c1', website: 'shopify.com' });
+    const result = await resolveCompanyId(client, 'user-1', 'Shopify', null, null);
+
+    expect(result.data).toBe('c1');
+    expect(updates).toEqual([]);
+  });
+
+  it('replaces them when a list is sent, and clears them on an empty one', async () => {
+    const { client, updates } = fakeCompanies({ id: 'c1', website: 'shopify.com' });
+    await resolveCompanyId(client, 'user-1', 'Shopify', null, ['Commerce', 'SaaS']);
+    await resolveCompanyId(client, 'user-1', 'Shopify', null, []);
+
+    expect(updates).toEqual([{ tags: ['Commerce', 'SaaS'] }, { tags: [] }]);
+  });
+
+  it('stores them on a company created by the same call', async () => {
+    const { client, inserts } = fakeCompanies(null);
+    await resolveCompanyId(client, 'user-1', 'Wealthsimple', 'wealthsimple.com', ['Fintech']);
+
+    expect(inserts[0]).toMatchObject({ name: 'Wealthsimple', tags: ['Fintech'] });
+  });
+
+  it('does not send tags on insert when there are none, so the column default applies', async () => {
+    const { client, inserts } = fakeCompanies(null);
+    await resolveCompanyId(client, 'user-1', 'Acme', null, null);
+
+    expect(inserts[0]).not.toHaveProperty('tags');
+  });
+});
+
+describe('setCompanyTags', () => {
+  it('writes the list to the company the application belongs to', async () => {
+    const updates: { values: Record<string, unknown>; id: unknown }[] = [];
+    const client = {
+      from: (table: string) =>
+        table === 'applications'
+          ? {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({ maybeSingle: async () => ({ data: { company_id: 'c9' }, error: null }) }),
+                }),
+              }),
+            }
+          : {
+              update: (values: Record<string, unknown>) => ({
+                eq: (_col: string, id: unknown) => ({
+                  eq: async () => {
+                    updates.push({ values, id });
+                    return { error: null };
+                  },
+                }),
+              }),
+            },
+    } as unknown as SupabaseClient;
+
+    const result = await setCompanyTags(client, 'user-1', { id: ID, tags: ['Insurance', 'AI'] });
+
+    expect(result.data).toEqual(['Insurance', 'AI']);
+    expect(updates).toEqual([{ values: { tags: ['Insurance', 'AI'] }, id: 'c9' }]);
+  });
+
+  it('says so when the application is not there', async () => {
+    const client = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+
+    const result = await setCompanyTags(client, 'user-1', { id: ID, tags: ['Bank'] });
+    expect(result.error).toBe('No such application.');
   });
 });

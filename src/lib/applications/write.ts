@@ -7,6 +7,7 @@ import type {
   ApplicationInput,
   ApplicationSearchInput,
   ApplicationUpdateInput,
+  CompanyTagsInput,
   LocationChangeInput,
   MeetingInput,
   NoteInput,
@@ -51,6 +52,8 @@ export async function resolveCompanyId(
   userId: string,
   name: string,
   website: string | null,
+  /** null leaves the company's tags as they are; an array (even empty) replaces them. */
+  tags: string[] | null,
 ): Promise<WriteResult<string>> {
   const { data: existing, error: findError } = await supabase
     .from('companies')
@@ -64,15 +67,26 @@ export async function resolveCompanyId(
   if (existing) {
     // Fill in a website we did not have before, so the logo starts resolving by
     // domain instead of by name. Never blank out one already recorded.
-    if (website && !existing.website) {
-      await supabase.from('companies').update({ website }).eq('id', existing.id);
+    //
+    // Tags are the opposite: what the caller sent is the answer, so a tag list
+    // fixed on the form or corrected by a later tool call replaces the old one.
+    const patch = {
+      ...(website && !existing.website ? { website } : {}),
+      ...(tags ? { tags } : {}),
+    };
+    if (Object.keys(patch).length > 0) {
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update(patch)
+        .eq('id', existing.id);
+      if (updateError) return fail(updateError.message);
     }
     return ok(existing.id as string);
   }
 
   const { data: created, error: insertError } = await supabase
     .from('companies')
-    .insert({ user_id: userId, name, website })
+    .insert({ user_id: userId, name, website, ...(tags ? { tags } : {}) })
     .select('id')
     .single();
 
@@ -148,7 +162,13 @@ export async function createApplication(
   userId: string,
   input: ApplicationInput,
 ): Promise<WriteResult<string>> {
-  const company = await resolveCompanyId(supabase, userId, input.company, input.companyWebsite);
+  const company = await resolveCompanyId(
+    supabase,
+    userId,
+    input.company,
+    input.companyWebsite,
+    input.companyTags,
+  );
   if (company.error !== null) return fail(company.error);
 
   const place = await locationColumns(input.location, input.locationPlaceId);
@@ -250,7 +270,13 @@ export async function updateApplication(
   const current = await loadCurrent(supabase, userId, input.id);
   if (current.error !== null) return fail(current.error);
 
-  const company = await resolveCompanyId(supabase, userId, input.company, input.companyWebsite);
+  const company = await resolveCompanyId(
+    supabase,
+    userId,
+    input.company,
+    input.companyWebsite,
+    input.companyTags,
+  );
   if (company.error !== null) return fail(company.error);
 
   // An address that changed is re-geocoded here, in the same save.
@@ -370,6 +396,37 @@ export async function setLocation(
   return ok(place);
 }
 
+/**
+ * Replaces a company's tags, found through one of its applications. The
+ * equivalent of setLocation for the sector: the full update rewrites every
+ * column from a form, which is wrong for "that company is a bank, not a
+ * fintech" when the caller has no description to repeat.
+ */
+export async function setCompanyTags(
+  supabase: SupabaseClient,
+  userId: string,
+  input: CompanyTagsInput,
+): Promise<WriteResult<string[]>> {
+  const { data: application, error: findError } = await supabase
+    .from('applications')
+    .select('company_id')
+    .eq('id', input.id)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (findError) return fail(findError.message);
+  if (!application) return fail('No such application.');
+
+  const { error } = await supabase
+    .from('companies')
+    .update({ tags: input.tags })
+    .eq('id', application.company_id)
+    .eq('user_id', userId);
+
+  if (error) return fail(error.message);
+  return ok(input.tags);
+}
+
 export async function addNote(
   supabase: SupabaseClient,
   userId: string,
@@ -405,7 +462,7 @@ export async function addMeeting(
 
 /** The columns a caller outside the UI needs to identify and act on a row. */
 const SUMMARY_COLUMNS =
-  'id, role, status, outcome, location, location_place_id, location_lat, location_lng, remote_type, salary_min, salary_max, salary_currency, job_url, platform_found, platform_applied, applied_at, first_response_at, closed_at, created_at, companies (id, name, website)';
+  'id, role, status, outcome, location, location_place_id, location_lat, location_lng, remote_type, salary_min, salary_max, salary_currency, job_url, platform_found, platform_applied, applied_at, first_response_at, closed_at, created_at, companies (id, name, website, tags)';
 
 export async function searchApplications(
   supabase: SupabaseClient,

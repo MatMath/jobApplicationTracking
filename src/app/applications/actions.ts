@@ -39,6 +39,7 @@ export async function createApplication(
   const parsed = applicationInput.safeParse({
     ...fields(formData),
     companyWebsite: formData.get('company_website'),
+    companyTags: formData.get('company_tags'),
     jobUrl: formData.get('job_url'),
     applicationType: formData.get('application_type'),
     platformFound: formData.get('platform_found'),
@@ -69,6 +70,7 @@ export async function updateApplication(
   const parsed = applicationUpdateInput.safeParse({
     ...fields(formData),
     companyWebsite: formData.get('company_website'),
+    companyTags: formData.get('company_tags'),
     jobUrl: formData.get('job_url'),
     applicationType: formData.get('application_type'),
     platformFound: formData.get('platform_found'),

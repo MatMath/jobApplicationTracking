@@ -5,6 +5,7 @@ import { McpPrompt } from '@/components/McpCallout';
 import { publicOrigin } from '@/lib/origin';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { AppNav } from '@/components/AppNav';
+import { TagList } from '@/components/TagList';
 import {
   STATUS_LABELS,
   APPLICATION_TYPE_LABELS,
@@ -82,7 +83,7 @@ export default async function ApplicationsPage({
 
   const { data, error } = await supabase
     .from('applications')
-    .select('*, companies (id, name, website)')
+    .select('*, companies (id, name, website, tags)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -167,6 +168,7 @@ export default async function ApplicationsPage({
                         {STATUS_LABELS[app.status] ?? app.status}
                       </span>
                     </div>
+                    <TagList tags={app.companies?.tags} className="mt-1" />
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs opacity-60">
                       {app.location ? <span>{app.location}</span> : null}
                       {app.platform_found ? <span>{app.platform_found}</span> : null}

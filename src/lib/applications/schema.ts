@@ -7,6 +7,7 @@ import {
   REMOTE_TYPES,
   STATUSES,
 } from '@/db/schema';
+import { MAX_COMPANY_TAGS, MAX_TAG_LENGTH, cleanTags } from './tags';
 
 /**
  * Validation for every write path — the form and the MCP tools both parse
@@ -79,9 +80,34 @@ const optionalUrl = z.preprocess((v) => {
   return /^https?:\/\//i.test(s) ? s : `https://${s}`;
 }, z.url().nullable());
 
+const tagList = z
+  .array(
+    z
+      .string()
+      .max(MAX_TAG_LENGTH, `Each tag is at most ${MAX_TAG_LENGTH} characters; use a short label like "Fintech".`),
+  )
+  .max(MAX_COMPANY_TAGS, `At most ${MAX_COMPANY_TAGS} tags; keep the ones that say most about the company.`);
+
+/** A tag list that must be present: the tool whose only job is to set it. */
+const requiredTags = z.preprocess((v) => (v === null || v === undefined ? [] : cleanTags(v)), tagList);
+
+/**
+ * Tags on the write path, where "absent" and "empty" mean different things.
+ * Unlike the other optional fields, null here is not "blank" — it is "do not
+ * touch what the company already has". A tool that omits the key (or sends
+ * null) leaves existing tags alone; a blank form field or an empty array clears
+ * them. Treating the two alike would make a second posting at a known company
+ * wipe its tags, or make clearing them from the form impossible.
+ */
+const companyTags = z.preprocess(
+  (v) => (v === null || v === undefined ? null : cleanTags(v)),
+  tagList.nullable(),
+);
+
 const applicationFields = z.object({
   company: requiredText,
   companyWebsite: optionalUrl.default(null),
+  companyTags: companyTags.default(null),
   role: requiredText,
   description: optionalText.default(null),
   jobUrl: optionalUrl.default(null),
@@ -152,6 +178,17 @@ export const locationChangeInput = z
     message: 'Pass an address, a place id, or both.',
   });
 
+/**
+ * Setting the company's tags from an application, without touching anything
+ * else — for the applications that were recorded before tags existed, and for
+ * correcting one the model got wrong. The id is the application's, since that
+ * is what the other tools hand back; the tags land on its company.
+ */
+export const companyTagsInput = z.object({
+  id: z.uuid(),
+  tags: requiredTags,
+});
+
 /** Status-only move, for "I got a phone screen at Acme". */
 export const statusChangeInput = z.object({
   id: z.uuid(),
@@ -190,6 +227,7 @@ export const applicationSearchInput = z.object({
 
 export type ApplicationInput = z.infer<typeof applicationInput>;
 export type LocationChangeInput = z.infer<typeof locationChangeInput>;
+export type CompanyTagsInput = z.infer<typeof companyTagsInput>;
 export type ApplicationUpdateInput = z.infer<typeof applicationUpdateInput>;
 export type StatusChangeInput = z.infer<typeof statusChangeInput>;
 export type NoteInput = z.infer<typeof noteInput>;

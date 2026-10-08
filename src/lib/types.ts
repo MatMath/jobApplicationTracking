@@ -32,7 +32,7 @@ export type MeetingRow = SnakeCaseKeys<Meeting>;
 export type ApplicationRow = SnakeCaseKeys<Application>;
 
 export type ApplicationWithCompany = ApplicationRow & {
-  companies: Pick<CompanyRow, 'id' | 'name'> | null;
+  companies: Pick<CompanyRow, 'id' | 'name' | 'website' | 'tags'> | null;
 };
 
 /** Human labels for the pipeline, kept next to the values they describe. */
