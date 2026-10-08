@@ -22,7 +22,8 @@ data model.
    not yet run, in order: [`002_profiles.sql`](supabase/002_profiles.sql),
    [`003_dashboard.sql`](supabase/003_dashboard.sql),
    [`004_application_location.sql`](supabase/004_application_location.sql),
-   [`005_documents.sql`](supabase/005_documents.sql).
+   [`005_documents.sql`](supabase/005_documents.sql),
+   [`006_company_tags.sql`](supabase/006_company_tags.sql).
 
    `005` is the exception to "bootstrap creates everything": it also creates
    the private storage bucket and its policies, so run it after `bootstrap.sql`
@@ -30,7 +31,8 @@ data model.
 
    Skipping one shows up at runtime, not at build time — saving an application
    against a database missing `004` fails with *"Could not find the
-   'location_lat' column of 'applications' in the schema cache"*. `npm test`
+   'location_lat' column of 'applications' in the schema cache"*, and the
+   applications list fails to load without `006`. `npm test`
    checks that every column in `schema.ts` is declared by some file in
    `supabase/`, but it cannot know which files a given database has run.
 2. In Authentication → Sign In / Providers: enable **Google** (Client ID and
@@ -254,6 +256,10 @@ a job posting: give it a URL and it reads the page itself, then calls
 `create_application` with the fields it extracted. It can also search, move an
 application along the pipeline, add notes and interview rounds, and resolve an
 office address to a map pin (`lookup_location`, `set_application_location`).
+It tags what the company does — up to five short labels such as Fintech, AI or
+Insurance, shown on the application page and the list — through
+`create_application` for a new posting and `set_company_tags` for one already
+saved. The tags belong to the company, so every application there shares them.
 
 It also keeps the paperwork: `upload_document` stores a file (text passed
 directly, or base64 for a PDF it holds the bytes of), `list_documents` and
@@ -417,6 +423,7 @@ to save the new answers as a new file.
 | `src/app/settings/documents/` | The library page, and the actions the application page shares |
 | `src/app/api/documents/[id]/download/` | Signs a short-lived link to a private file |
 | `supabase/005_documents.sql` | Document tables, the storage bucket, and their policies |
+| `supabase/006_company_tags.sql` | The sector tags on a company |
 | `src/lib/geo/` | Places lookup, map URLs, and the pin grouping the map and its list share |
 | `src/app/api/places/search/` | Address suggestions, proxied so the key stays server-side |
 | `src/app/api/map/applications/` | The dashboard map, fetched as an image for the same reason |

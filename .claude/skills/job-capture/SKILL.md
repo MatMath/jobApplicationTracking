@@ -42,7 +42,11 @@ README's "Application skills" section covers connecting it.
 
 5. **Save it** with `create_application`: status `wishlist`, `description` set
    to the full posting body, `jobUrl`, `platformFound`, and the `locationPlaceId`
-   from step 4.
+   from step 4. Also pass `companyTags`: at most five short labels for what the
+   company does ("Fintech", "AI", "Insurance", "Bank"), taken from the
+   posting's own account of the employer. Name the sector or the product, not
+   the role or the tech stack. If the posting does not say and you cannot place
+   the company, leave it out; tags already on a known company are kept.
 
 6. **Keep the posting as a file**: `upload_document` with type `job_posting`,
    `fileName` "`<Company> - <Role>.md`", the posting as Markdown in `content`,
